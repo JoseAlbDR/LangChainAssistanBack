@@ -2,6 +2,7 @@ import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { ChatBotService } from './chat-bot.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
+import { UserQuestionDto } from './dto/user-question.dto';
 
 @Controller('chat-bot')
 export class ChatBotController {
@@ -26,7 +27,12 @@ export class ChatBotController {
   }
 
   @Post('user-question')
-  async userQuestion(@Body('question') question: string, @Res() res: Response) {
+  async userQuestion(
+    @Body('question') userQuestionDto: UserQuestionDto,
+    @Res() res: Response,
+  ) {
+    const { question } = userQuestionDto;
+
     const stream = await this.chatBotService.getChatBotAnswer(
       question,
       this.convHistory,
