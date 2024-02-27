@@ -15,10 +15,10 @@ export const envs = {
 
   //* DOCUMENT INFO
   DOCUMENT_PATH: get('DOCUMENT_PATH').default('./data/').asString(),
-  DOCUMENT_NAME: get('DOCUMENT_NAME').default('document').asString(),
-  DOCUMENT_EXTENSION: get('DOCUMENT_EXTENSION')
-    .default('.txt')
-    .asEnum(['.txt', '.pdf']),
+  // DOCUMENT_NAME: get('DOCUMENT_NAME').default('document').asString(),
+  // DOCUMENT_EXTENSION: get('DOCUMENT_EXTENSION')
+  //   .default('.txt')
+  //   .asEnum(['.txt', '.pdf']),
 
   //* APP PORT
   PORT: get('PORT').default(3000).asPortNumber(),
