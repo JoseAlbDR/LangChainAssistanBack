@@ -1,0 +1,291 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["aup", "vector"]
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  password          String
+  username          String         @unique
+  emailValidated    Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @default(now())
+  avatar            String         @default("avatar.png")
+  role              user_roles
+  verificationToken String         @default("")
+  passwordToken     String         @default("")
+  dni               String?
+  firstName         String?
+  isOnline          Boolean        @default(false)
+  lastName          String?
+  verifiedAt        DateTime?
+  admin             Admin?
+  animals           Animal[]       @relation("adopted")
+  contactInfo       ContactInfo?
+  notifications     Notification[]
+  shelter           Shelter?
+  Token             Token?
+  userFav           Animal[]       @relation("userFav")
+
+  @@schema("aup")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  message   String
+  createdAt DateTime  @default(now())
+  queue     String
+  isRead    Boolean   @default(false)
+  isReadAt  DateTime?
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("aup")
+}
+
+model Token {
+  id           String  @id @default(uuid())
+  refreshToken String
+  ip           String
+  userAgent    String
+  isValid      Boolean @default(true)
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("aup")
+}
+
+model Shelter {
+  id                   String        @id
+  description          String        @default("")
+  cif                  String
+  facilities           facilities?
+  images               String[]
+  legalForms           legal_forms?
+  ownVet               Boolean?
+  veterinaryFacilities Boolean?
+  animals              Animal[]
+  user                 User          @relation(fields: [id], references: [id], onDelete: Cascade)
+  socialMedia          SocialMedia[]
+
+  @@schema("aup")
+}
+
+model Admin {
+  id   String @id
+  name String
+  user User   @relation(fields: [id], references: [id])
+
+  @@schema("aup")
+}
+
+model ContactInfo {
+  id          String @id
+  phoneNumber String
+  cityId      Int
+  city        City   @relation(fields: [cityId], references: [id])
+  user        User   @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@schema("aup")
+}
+
+model SocialMedia {
+  name      social_media_enum
+  url       String
+  shelterId String
+  shelter   Shelter           @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+
+  @@id([shelterId, name])
+  @@schema("aup")
+}
+
+model City {
+  id          Int           @id @default(autoincrement())
+  name        String
+  animal      Animal[]
+  contactInfo ContactInfo[]
+
+  @@schema("aup")
+}
+
+model Animal {
+  id            String                  @id @default(uuid())
+  name          String
+  slug          String                  @unique
+  age           Float
+  description   String                  @default("")
+  breed         String
+  size          animal_size
+  publishStatus adoption_publish_status @default(pending)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @default(now())
+  adoptedBy     String?
+  createdBy     String
+  cityId        Int
+  images        String[]
+  easyTrain     Boolean
+  energyLevel   energy
+  moltingAmount molting
+  status        status_pet              @default(awaiting_home)
+  type          animal_type
+  gender        gender_enum
+  numFavs       Int                     @default(0)
+  adopter       User?                   @relation("adopted", fields: [adoptedBy], references: [id])
+  city          City                    @relation(fields: [cityId], references: [id])
+  shelter       Shelter                 @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  cat           Cat?
+  dog           Dog?
+  userFav       User[]                  @relation("userFav")
+
+  @@index([gender])
+  @@index([name])
+  @@index([age])
+  @@index([size])
+  @@index([createdBy])
+  @@schema("aup")
+}
+
+model Dog {
+  id                String    @id
+  departmentAdapted Boolean
+  droolingPotential potential
+  bark              potential
+  animal            Animal    @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@schema("aup")
+}
+
+model Cat {
+  id               String    @id
+  playLevel        potential
+  kidsFriendly     Boolean
+  scratchPotential potential
+  toiletTrained    Boolean
+  animal           Animal    @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@schema("aup")
+}
+
+model Documents {
+  id      String                 @id @default(cuid())
+  content String
+  vector  Unsupported("vector")?
+
+  @@schema("vector")
+}
+
+enum user_roles {
+  adopter
+  shelter
+  admin
+
+  @@schema("aup")
+}
+
+enum gender_enum {
+  male
+  female
+
+  @@schema("aup")
+}
+
+enum adoption_publish_status {
+  pending
+  rejected
+  published
+
+  @@schema("aup")
+}
+
+enum social_media_enum {
+  facebook
+  xtweet
+  instagram
+
+  @@schema("aup")
+}
+
+enum animal_size {
+  small
+  medium
+  big
+  very_big
+
+  @@schema("aup")
+}
+
+enum legal_forms {
+  association
+  public_utility_association
+  autonomous_foundation
+  national_foundation
+  other
+
+  @@schema("aup")
+}
+
+enum facilities {
+  foster_homes
+  municipal_or_public_facilities
+  leased_facilities
+  owned_facilities
+  private_residences
+
+  @@schema("aup")
+}
+
+enum status_pet {
+  adopted
+  fostered
+  reserved
+  awaiting_home
+
+  @@schema("aup")
+}
+
+enum molting {
+  light
+  moderate
+  heavy
+  no_shedding
+
+  @@schema("aup")
+}
+
+enum energy {
+  light
+  moderate
+  high
+
+  @@schema("aup")
+}
+
+enum potential {
+  none
+  low
+  moderate
+  high
+  excessive
+
+  @@schema("aup")
+}
+
+enum animal_type {
+  cat
+  dog
+
+  @@schema("aup")
+}
