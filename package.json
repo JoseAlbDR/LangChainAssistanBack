@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:document": "node dist/data/seed-document/seed"
   },
   "dependencies": {
     "@langchain/community": "^0.0.33",
@@ -25,9 +26,11 @@
     "@langchain/openai": "^0.0.14",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
+    "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^5.10.2",
     "dotenv": "^16.4.5",
+    "env-var": "^7.4.1",
     "langchain": "^0.1.23",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
