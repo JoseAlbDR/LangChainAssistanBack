@@ -1,8 +1,19 @@
-import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  FileTypeValidator,
+  HttpStatus,
+  ParseFilePipe,
+  Post,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ChatBotService } from './chat-bot.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
 import { UserQuestionDto } from './dto/user-question.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('chat-bot')
 export class ChatBotController {
@@ -28,7 +39,7 @@ export class ChatBotController {
 
   @Post('user-question')
   async userQuestion(
-    @Body('question') userQuestionDto: UserQuestionDto,
+    @Body() userQuestionDto: UserQuestionDto,
     @Res() res: Response,
   ) {
     const { question } = userQuestionDto;
@@ -42,7 +53,15 @@ export class ChatBotController {
   }
 
   @Post('feed-document')
-  async feedDocument(@Body('path') path: string) {
-    console.log(path);
+  @UseInterceptors(FileInterceptor('document'))
+  async feedDocument(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new FileTypeValidator({ fileType: /(text|pdf)/ })],
+      }),
+    )
+    document: Express.Multer.File,
+  ) {
+    return await this.chatBotService.feedDocument(document);
   }
 }
