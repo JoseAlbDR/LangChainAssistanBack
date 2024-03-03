@@ -42,9 +42,10 @@ export class ChatBotController {
     @Body() userQuestionDto: UserQuestionDto,
     @Res() res: Response,
   ) {
-    const { question } = userQuestionDto;
+    const { question, document } = userQuestionDto;
 
     const stream = await this.chatBotService.getChatBotAnswer(
+      document,
       question,
       this.convHistory,
     );

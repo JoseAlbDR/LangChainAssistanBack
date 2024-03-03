@@ -13,8 +13,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Documents {
-  id      String                 @id @default(cuid())
-  content String
-  vector  Unsupported("vector")?
+model Document {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  embeddings Embedding[]
+}
+
+model Embedding {
+  id         String                 @id @default(cuid())
+  content    String
+  vector     Unsupported("vector")?
+  Document   Document?              @relation(fields: [documentId], references: [id])
+  documentId String?
 }

@@ -13,7 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
       useValue: {
         openAIApiKey: process.env.OPENAI_API_KEY,
         temperature: 0,
-        maxTokens: 500,
+        maxTokens: 100,
       },
     },
   ],

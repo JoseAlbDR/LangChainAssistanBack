@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -12,7 +13,7 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { Documents, Prisma } from '@prisma/client';
+import { Embedding, Prisma } from '@prisma/client';
 import { Document } from 'langchain/document';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
@@ -30,7 +31,9 @@ export class ChatBotService {
   private readonly model: ChatOpenAI;
   private readonly passThrough = new RunnablePassthrough();
   private readonly stringParser = new StringOutputParser();
-  private readonly embeddings = new OpenAIEmbeddings();
+  private readonly embeddings = new OpenAIEmbeddings({
+    modelName: 'text-embedding-3-small',
+  });
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -38,6 +41,7 @@ export class ChatBotService {
   ) {
     const { openAIApiKey, maxTokens, temperature } = this.openAIConfig;
     this.model = new ChatOpenAI({
+      modelName: 'gpt-3.5-turbo-0125',
       openAIApiKey,
       temperature,
       maxTokens,
@@ -61,15 +65,44 @@ export class ChatBotService {
     return standAloneQuestionChain;
   }
 
-  private generateRetrieverChain() {
-    const vectorStore = new PrismaVectorStore(this.embeddings, {
-      db: this.prismaService,
+  private async generateRetrieverChain(document: string) {
+    // const vectorStore = new PrismaVectorStore(this.embeddings, {
+    //   db: this.prismaService,
+    //   prisma: Prisma,
+    //   tableName: 'Embedding',
+    //   vectorColumnName: 'vector',
+    //   columns: {
+    //     id: PrismaVectorStore.IdColumn,
+    //     content: PrismaVectorStore.ContentColumn,
+    //   },
+    //   filter: {
+
+    //   },
+    // });
+
+    const { id } = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const vectorStore = PrismaVectorStore.withModel<Embedding>(
+      this.prismaService,
+    ).create(this.embeddings, {
       prisma: Prisma,
-      tableName: 'Documents',
+      tableName: 'Embedding',
       vectorColumnName: 'vector',
       columns: {
         id: PrismaVectorStore.IdColumn,
         content: PrismaVectorStore.ContentColumn,
+      },
+      filter: {
+        documentId: {
+          equals: id,
+        },
       },
     });
 
@@ -125,9 +158,13 @@ export class ChatBotService {
       .join('\n');
   }
 
-  async getChatBotAnswer(question: string, convHistory: string[]) {
+  async getChatBotAnswer(
+    document: string,
+    question: string,
+    convHistory: string[],
+  ) {
     const standAloneQuestionChain = this.generateStandAloneQuestionChain();
-    const retrieverChain = this.generateRetrieverChain();
+    const retrieverChain = await this.generateRetrieverChain(document);
     const answerChain = this.generateAnswerChain();
 
     const chain = RunnableSequence.from([
@@ -194,8 +231,8 @@ export class ChatBotService {
       const filePath = this.saveFile(document);
 
       const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 500,
-        chunkOverlap: 50,
+        chunkSize: 200,
+        chunkOverlap: 20,
       });
 
       let output: Document[];
@@ -208,32 +245,50 @@ export class ChatBotService {
 
       console.log({ output });
 
+      const exist = await this.prismaService.document.findUnique({
+        where: {
+          name: document.originalname,
+        },
+      });
+
+      if (exist)
+        throw new BadRequestException(
+          `Document ${document.originalname} already exists`,
+        );
+
+      const newDocument = await this.prismaService.document.create({
+        data: {
+          name: document.originalname,
+        },
+      });
+
       //* Store output in a prisma vector store
-      const vectorStore = PrismaVectorStore.withModel<Documents>(
+      const vectorStore = PrismaVectorStore.withModel<Embedding>(
         this.prismaService,
-      ).create(
-        new OpenAIEmbeddings({
-          openAIApiKey: process.env.OPENAI_API_KEY,
-        }),
-        {
-          prisma: Prisma,
-          tableName: 'Documents',
-          vectorColumnName: 'vector',
-          columns: {
-            id: PrismaVectorStore.IdColumn,
-            content: PrismaVectorStore.ContentColumn,
+      ).create(this.embeddings, {
+        prisma: Prisma,
+        tableName: 'Embedding',
+        vectorColumnName: 'vector',
+        columns: {
+          id: PrismaVectorStore.IdColumn,
+          content: PrismaVectorStore.ContentColumn,
+        },
+        filter: {
+          documentId: {
+            equals: newDocument.name,
           },
         },
-      );
+      });
 
-      await this.prismaService.documents.deleteMany();
+      // await this.prismaService.embedding.deleteMany();
 
       await vectorStore.addModels(
         await this.prismaService.$transaction(
           output.map((chunk) =>
-            this.prismaService.documents.create({
+            this.prismaService.embedding.create({
               data: {
                 content: chunk.pageContent,
+                documentId: newDocument.id,
               },
             }),
           ),
