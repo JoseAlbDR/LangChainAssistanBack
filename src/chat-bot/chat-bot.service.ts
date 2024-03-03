@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   RunnablePassthrough,
@@ -66,20 +61,6 @@ export class ChatBotService {
   }
 
   private async generateRetrieverChain(document: string) {
-    // const vectorStore = new PrismaVectorStore(this.embeddings, {
-    //   db: this.prismaService,
-    //   prisma: Prisma,
-    //   tableName: 'Embedding',
-    //   vectorColumnName: 'vector',
-    //   columns: {
-    //     id: PrismaVectorStore.IdColumn,
-    //     content: PrismaVectorStore.ContentColumn,
-    //   },
-    //   filter: {
-
-    //   },
-    // });
-
     const { id } = await this.prismaService.document.findUnique({
       where: {
         name: document,
@@ -88,6 +69,11 @@ export class ChatBotService {
         id: true,
       },
     });
+
+    if (!id)
+      throw new BadRequestException(
+        `Document ${document} does not exist, please first upload`,
+      );
 
     const vectorStore = PrismaVectorStore.withModel<Embedding>(
       this.prismaService,
@@ -296,9 +282,19 @@ export class ChatBotService {
       );
     } catch (err) {
       console.log(err);
-      throw new InternalServerErrorException('There was an error, check logs');
+      throw err;
     } finally {
       await this.prismaService.$disconnect();
     }
+  }
+
+  async getDocuments() {
+    const documents = await this.prismaService.document.findMany({
+      select: {
+        name: true,
+      },
+    });
+
+    return documents;
   }
 }

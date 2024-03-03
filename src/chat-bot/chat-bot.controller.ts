@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   FileTypeValidator,
+  Get,
   HttpStatus,
   ParseFilePipe,
   Post,
@@ -37,6 +38,11 @@ export class ChatBotController {
     res.end();
   }
 
+  @Get('documents')
+  async getDocuments() {
+    return this.chatBotService.getDocuments();
+  }
+
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: UserQuestionDto,
@@ -50,7 +56,7 @@ export class ChatBotController {
       this.convHistory,
     );
 
-    this.getStream(res, stream);
+    return this.getStream(res, stream);
   }
 
   @Post('feed-document')
