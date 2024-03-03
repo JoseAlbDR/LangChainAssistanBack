@@ -1,4 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   RunnablePassthrough,
@@ -186,8 +190,6 @@ export class ChatBotService {
   }
 
   async feedDocument(document: Express.Multer.File) {
-    console.log({ document });
-
     try {
       const filePath = this.saveFile(document);
 
@@ -239,6 +241,7 @@ export class ChatBotService {
       );
     } catch (err) {
       console.log(err);
+      throw new InternalServerErrorException('There was an error, check logs');
     } finally {
       await this.prismaService.$disconnect();
     }
