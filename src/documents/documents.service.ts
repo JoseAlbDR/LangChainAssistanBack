@@ -90,7 +90,6 @@ export class DocumentsService {
         },
       });
 
-      //* Store output in a prisma vector store
       const vectorStore = this.vectorStoreService.createVectorStore(
         newDocument.id,
       );

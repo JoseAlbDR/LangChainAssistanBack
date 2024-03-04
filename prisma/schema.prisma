@@ -22,6 +22,7 @@ model Document {
 model Embedding {
   id         String                 @id @default(cuid())
   content    String
+  metadata   Json                   @map("metadata")
   vector     Unsupported("vector")?
   Document   Document?              @relation(fields: [documentId], references: [id])
   documentId String?

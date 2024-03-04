@@ -11,6 +11,7 @@ type VectorStoreType = PrismaVectorStore<
     id: string;
     content: string;
     documentId: string;
+    metadata: Prisma.JsonValue;
   },
   'Embedding' | 'Document',
   {
@@ -62,6 +63,7 @@ export class VectorStoreService {
           this.prismaService.embedding.create({
             data: {
               content: chunk.pageContent,
+              metadata: chunk.metadata,
               documentId: id,
             },
           }),
