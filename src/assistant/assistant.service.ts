@@ -49,21 +49,7 @@ export class AssistantService {
     return standAloneQuestionChain;
   }
 
-  private async generateRetrieverChain(document: string) {
-    const { id } = await this.prismaService.document.findUnique({
-      where: {
-        name: document,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!id)
-      throw new BadRequestException(
-        `Document ${document} does not exist, please first upload`,
-      );
-
+  private createVectorStore(id: string) {
     const vectorStore = PrismaVectorStore.withModel<Embedding>(
       this.prismaService,
     ).create(this.embeddings, {
@@ -80,6 +66,26 @@ export class AssistantService {
         },
       },
     });
+
+    return vectorStore;
+  }
+
+  private async generateRetrieverChain(document: string) {
+    const { id } = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!id)
+      throw new BadRequestException(
+        `Document ${document} does not exist, please first upload`,
+      );
+
+    const vectorStore = this.createVectorStore(id);
 
     const retriever = vectorStore.asRetriever();
 
@@ -238,24 +244,8 @@ export class AssistantService {
       });
 
       //* Store output in a prisma vector store
-      const vectorStore = PrismaVectorStore.withModel<Embedding>(
-        this.prismaService,
-      ).create(this.embeddings, {
-        prisma: Prisma,
-        tableName: 'Embedding',
-        vectorColumnName: 'vector',
-        columns: {
-          id: PrismaVectorStore.IdColumn,
-          content: PrismaVectorStore.ContentColumn,
-        },
-        filter: {
-          documentId: {
-            equals: newDocument.name,
-          },
-        },
-      });
 
-      // await this.prismaService.embedding.deleteMany();
+      const vectorStore = this.createVectorStore(newDocument.id);
 
       await vectorStore.addModels(
         await this.prismaService.$transaction(
