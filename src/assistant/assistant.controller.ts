@@ -13,7 +13,7 @@ import {
 import { AssistantService } from './assistant.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
-import { UserQuestionDto } from './dto/user-question.dto';
+import { UserQuestionDto } from '../shared/dtos/user-question.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('assistant')
