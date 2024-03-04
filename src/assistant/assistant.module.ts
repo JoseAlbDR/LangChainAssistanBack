@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ChatBotService } from './chat-bot.service';
-import { ChatBotController } from './chat-bot.controller';
+import { AssistantService } from './assistant.service';
+import { AssistantController } from './assistant.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
-  controllers: [ChatBotController],
+  controllers: [AssistantController],
   providers: [
-    ChatBotService,
+    AssistantService,
     PrismaService,
     {
       provide: 'OPENAI_CONFIG',
@@ -18,4 +18,4 @@ import { PrismaService } from 'src/prisma/prisma.service';
     },
   ],
 })
-export class ChatBotModule {}
+export class AssistantModule {}

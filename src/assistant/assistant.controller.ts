@@ -10,16 +10,16 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ChatBotService } from './chat-bot.service';
+import { AssistantService } from './assistant.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
 import { UserQuestionDto } from './dto/user-question.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-@Controller('chat-bot')
-export class ChatBotController {
+@Controller('assistant')
+export class AssistantController {
   private readonly convHistory: string[] = [];
-  constructor(private readonly chatBotService: ChatBotService) {}
+  constructor(private readonly assistantService: AssistantService) {}
 
   private async getStream(
     res: Response,
@@ -40,7 +40,7 @@ export class ChatBotController {
 
   @Get('documents')
   async getDocuments() {
-    return this.chatBotService.getDocuments();
+    return this.assistantService.getDocuments();
   }
 
   @Post('user-question')
@@ -50,7 +50,7 @@ export class ChatBotController {
   ) {
     const { question, document } = userQuestionDto;
 
-    const stream = await this.chatBotService.getChatBotAnswer(
+    const stream = await this.assistantService.getAssistantAnswer(
       document,
       question,
       this.convHistory,
@@ -69,6 +69,6 @@ export class ChatBotController {
     )
     document: Express.Multer.File,
   ) {
-    return await this.chatBotService.feedDocument(document);
+    return await this.assistantService.feedDocument(document);
   }
 }

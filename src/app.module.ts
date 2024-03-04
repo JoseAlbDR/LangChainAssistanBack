@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
-import { ChatBotModule } from './chat-bot/chat-bot.module';
+import { AssistantModule } from './assistant/assistant.module';
 
 @Module({
-  imports: [ChatBotModule],
+  imports: [AssistantModule],
   controllers: [],
   providers: [PrismaService],
 })

@@ -22,7 +22,7 @@ interface OpenAIConfig {
 }
 
 @Injectable()
-export class ChatBotService {
+export class AssistantService {
   private readonly model: ChatOpenAI;
   private readonly passThrough = new RunnablePassthrough();
   private readonly stringParser = new StringOutputParser();
@@ -144,7 +144,7 @@ export class ChatBotService {
       .join('\n');
   }
 
-  async getChatBotAnswer(
+  async getAssistantAnswer(
     document: string,
     question: string,
     convHistory: string[],
