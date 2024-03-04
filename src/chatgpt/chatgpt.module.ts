@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { ChatgptService } from './chatgpt.service';
 import { ChatgptController } from './chatgpt.controller';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
+import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 
 @Module({
   controllers: [ChatgptController],
   providers: [
     ChatgptService,
     PrismaService,
+    VectorStoreService,
     {
       provide: 'OPENAI_CONFIG',
       useValue: {

@@ -5,16 +5,18 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { Document } from 'langchain/document';
-import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
-import { Embedding, Prisma } from '@prisma/client';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 
 @Injectable()
 export class DocumentsService {
   private readonly embeddings = new OpenAIEmbeddings({
     modelName: 'text-embedding-3-small',
   });
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly vectorStoreService: VectorStoreService,
+  ) {}
 
   private saveFile(file: Express.Multer.File) {
     const filePath = path.resolve('data', file.originalname);
@@ -50,27 +52,6 @@ export class DocumentsService {
     const output = await splitter.splitDocuments(docs);
 
     return output;
-  }
-
-  private createVectorStore(id: string) {
-    const vectorStore = PrismaVectorStore.withModel<Embedding>(
-      this.prismaService,
-    ).create(this.embeddings, {
-      prisma: Prisma,
-      tableName: 'Embedding',
-      vectorColumnName: 'vector',
-      columns: {
-        id: PrismaVectorStore.IdColumn,
-        content: PrismaVectorStore.ContentColumn,
-      },
-      filter: {
-        documentId: {
-          equals: id,
-        },
-      },
-    });
-
-    return vectorStore;
   }
 
   async create(document: Express.Multer.File) {
@@ -110,20 +91,14 @@ export class DocumentsService {
       });
 
       //* Store output in a prisma vector store
+      const vectorStore = this.vectorStoreService.createVectorStore(
+        newDocument.id,
+      );
 
-      const vectorStore = this.createVectorStore(newDocument.id);
-
-      await vectorStore.addModels(
-        await this.prismaService.$transaction(
-          output.map((chunk) =>
-            this.prismaService.embedding.create({
-              data: {
-                content: chunk.pageContent,
-                documentId: newDocument.id,
-              },
-            }),
-          ),
-        ),
+      await this.vectorStoreService.addModels(
+        vectorStore,
+        output,
+        newDocument.id,
       );
     } catch (err) {
       console.log(err);

@@ -1,28 +1,25 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import {
   RunnablePassthrough,
   RunnableSequence,
 } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
-import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
-import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { Embedding, Prisma } from '@prisma/client';
 import { Document } from 'langchain/document';
 import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
+import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 
 @Injectable()
 export class AssistantService {
   private readonly model: ChatOpenAI;
   private readonly passThrough = new RunnablePassthrough();
   private readonly stringParser = new StringOutputParser();
-  private readonly embeddings = new OpenAIEmbeddings({
-    modelName: 'text-embedding-3-small',
-  });
 
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly vectorStoreService: VectorStoreService,
     @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {
     this.model = new ChatOpenAI(this.openAIConfig);
@@ -45,27 +42,6 @@ export class AssistantService {
     return standAloneQuestionChain;
   }
 
-  private createVectorStore(id: string) {
-    const vectorStore = PrismaVectorStore.withModel<Embedding>(
-      this.prismaService,
-    ).create(this.embeddings, {
-      prisma: Prisma,
-      tableName: 'Embedding',
-      vectorColumnName: 'vector',
-      columns: {
-        id: PrismaVectorStore.IdColumn,
-        content: PrismaVectorStore.ContentColumn,
-      },
-      filter: {
-        documentId: {
-          equals: id,
-        },
-      },
-    });
-
-    return vectorStore;
-  }
-
   private async generateRetrieverChain(document: string) {
     const { id } = await this.prismaService.document.findUnique({
       where: {
@@ -81,7 +57,7 @@ export class AssistantService {
         `Document ${document} does not exist, please first upload`,
       );
 
-    const vectorStore = this.createVectorStore(id);
+    const vectorStore = this.vectorStoreService.createVectorStore(id);
 
     const retriever = vectorStore.asRetriever();
 
