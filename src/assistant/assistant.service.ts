@@ -6,10 +6,9 @@ import {
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { Document } from 'langchain/document';
 import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
+import { DocumentsService } from 'src/documents/documents.service';
 
 @Injectable()
 export class AssistantService {
@@ -18,7 +17,7 @@ export class AssistantService {
   private readonly stringParser = new StringOutputParser();
 
   constructor(
-    private readonly prismaService: PrismaService,
+    private readonly documentsService: DocumentsService,
     private readonly vectorStoreService: VectorStoreService,
     @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {
@@ -43,14 +42,7 @@ export class AssistantService {
   }
 
   private async generateRetrieverChain(document: string) {
-    const { id } = await this.prismaService.document.findUnique({
-      where: {
-        name: document,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const { id } = await this.documentsService.findOne(document);
 
     if (!id)
       throw new BadRequestException(
@@ -68,14 +60,10 @@ export class AssistantService {
         console.log({ prevResult });
         return prevResult;
       },
-      this.combineDocuments,
+      this.documentsService.combineDocuments,
     ]);
 
     return retrieverChain;
-  }
-
-  private combineDocuments(docs: Document[]) {
-    return docs.map((doc) => doc.pageContent).join('\n\n');
   }
 
   private generateAnswerChain() {

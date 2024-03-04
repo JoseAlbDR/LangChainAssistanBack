@@ -3,13 +3,16 @@ import { AssistantService } from './assistant.service';
 import { AssistantController } from './assistant.controller';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { VectorStoreModule } from 'src/shared/services/vector-store/vector-store.module';
+import { DocumentsModule } from 'src/documents/documents.module';
+import { DocumentsService } from 'src/documents/documents.service';
 
 @Module({
-  imports: [VectorStoreModule],
+  imports: [VectorStoreModule, DocumentsModule],
   controllers: [AssistantController],
   providers: [
     AssistantService,
     PrismaService,
+    DocumentsService,
     {
       provide: 'OPENAI_CONFIG',
       useValue: {

@@ -35,7 +35,7 @@ export class DocumentsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.documentsService.findOne(+id);
+    return this.documentsService.findOne(id);
   }
 
   // @Patch(':id')

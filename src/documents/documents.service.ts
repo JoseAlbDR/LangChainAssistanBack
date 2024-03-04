@@ -5,18 +5,18 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { Document } from 'langchain/document';
-import { OpenAIEmbeddings } from '@langchain/openai';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 
 @Injectable()
 export class DocumentsService {
-  private readonly embeddings = new OpenAIEmbeddings({
-    modelName: 'text-embedding-3-small',
-  });
   constructor(
     private readonly prismaService: PrismaService,
     private readonly vectorStoreService: VectorStoreService,
   ) {}
+
+  public combineDocuments(docs: Document[]) {
+    return docs.map((doc) => doc.pageContent).join('\n\n');
+  }
 
   private saveFile(file: Express.Multer.File) {
     const filePath = path.resolve('data', file.originalname);
@@ -31,8 +31,6 @@ export class DocumentsService {
     splitter: RecursiveCharacterTextSplitter,
   ) {
     const text = fs.readFileSync(filePath, 'utf-8');
-
-    console.log({ text });
 
     const output = await splitter.createDocuments([text]);
 
@@ -70,8 +68,6 @@ export class DocumentsService {
 
       if (document.mimetype === 'text/plain')
         output = await this.loadTextDocument(filePath, splitter);
-
-      console.log({ output });
 
       const exist = await this.prismaService.document.findUnique({
         where: {
@@ -118,8 +114,14 @@ export class DocumentsService {
     return documents;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} document`;
+  async findOne(document: string) {
+    const foundDocument = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+    });
+
+    return foundDocument;
   }
 
   // update(id: number, updateDocumentDto: UpdateDocumentDto) {
