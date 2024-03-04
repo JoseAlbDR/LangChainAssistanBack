@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-
 import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Embedding, Prisma } from '@prisma/client';
@@ -52,7 +51,11 @@ export class VectorStoreService {
     );
   }
 
-  async addModels(vectorStore: VectorStoreType, output: Document[], id) {
+  async addModels(
+    vectorStore: VectorStoreType,
+    output: Document[],
+    id: string,
+  ) {
     await vectorStore.addModels(
       await this.prismaService.$transaction(
         output.map((chunk) =>

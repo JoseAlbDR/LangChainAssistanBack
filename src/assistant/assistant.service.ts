@@ -142,14 +142,4 @@ export class AssistantService {
 
     return stream;
   }
-
-  async getDocuments() {
-    const documents = await this.prismaService.document.findMany({
-      select: {
-        name: true,
-      },
-    });
-
-    return documents;
-  }
 }

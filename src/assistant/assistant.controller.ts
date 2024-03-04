@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { AssistantService } from './assistant.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
@@ -24,11 +24,6 @@ export class AssistantController {
     this.convHistory.push(answer);
 
     res.end();
-  }
-
-  @Get('documents')
-  async getDocuments() {
-    return this.assistantService.getDocuments();
   }
 
   @Post('user-question')
