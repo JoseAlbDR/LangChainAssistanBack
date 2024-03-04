@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AssistantService } from './assistant.service';
 import { AssistantController } from './assistant.controller';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 
 @Module({
   controllers: [AssistantController],

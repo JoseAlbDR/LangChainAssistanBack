@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';

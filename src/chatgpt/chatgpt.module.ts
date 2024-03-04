@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ChatgptService } from './chatgpt.service';
 import { ChatgptController } from './chatgpt.controller';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 
 @Module({
   controllers: [ChatgptController],

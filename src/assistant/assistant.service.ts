@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import {
   RunnablePassthrough,
   RunnableSequence,
@@ -10,10 +10,6 @@ import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { Embedding, Prisma } from '@prisma/client';
 import { Document } from 'langchain/document';
-import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import * as fs from 'fs';
-import * as path from 'path';
 import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 
 @Injectable()
@@ -169,102 +165,6 @@ export class AssistantService {
     convHistory.push(question);
 
     return stream;
-  }
-
-  private async loadTextDocument(
-    filePath: string,
-    splitter: RecursiveCharacterTextSplitter,
-  ) {
-    const text = fs.readFileSync(filePath, 'utf-8');
-
-    console.log({ text });
-
-    const output = await splitter.createDocuments([text]);
-
-    return output;
-  }
-
-  private async loadPdfDocument(
-    file: string,
-    splitter: RecursiveCharacterTextSplitter,
-  ) {
-    const loader = new PDFLoader(file, {
-      parsedItemSeparator: '',
-    });
-
-    const docs = await loader.load();
-
-    const output = await splitter.splitDocuments(docs);
-
-    return output;
-  }
-
-  private saveFile(file: Express.Multer.File) {
-    const filePath = path.resolve('data', file.originalname);
-
-    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, file.buffer);
-
-    return filePath;
-  }
-
-  async feedDocument(document: Express.Multer.File) {
-    try {
-      const filePath = this.saveFile(document);
-
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 200,
-        chunkOverlap: 20,
-      });
-
-      let output: Document[];
-
-      if (document.mimetype === 'application/pdf')
-        output = await this.loadPdfDocument(filePath, splitter);
-
-      if (document.mimetype === 'text/plain')
-        output = await this.loadTextDocument(filePath, splitter);
-
-      console.log({ output });
-
-      const exist = await this.prismaService.document.findUnique({
-        where: {
-          name: document.originalname,
-        },
-      });
-
-      if (exist)
-        throw new BadRequestException(
-          `Document ${document.originalname} already exists`,
-        );
-
-      const newDocument = await this.prismaService.document.create({
-        data: {
-          name: document.originalname,
-        },
-      });
-
-      //* Store output in a prisma vector store
-
-      const vectorStore = this.createVectorStore(newDocument.id);
-
-      await vectorStore.addModels(
-        await this.prismaService.$transaction(
-          output.map((chunk) =>
-            this.prismaService.embedding.create({
-              data: {
-                content: chunk.pageContent,
-                documentId: newDocument.id,
-              },
-            }),
-          ),
-        ),
-      );
-    } catch (err) {
-      console.log(err);
-      throw err;
-    } finally {
-      await this.prismaService.$disconnect();
-    }
   }
 
   async getDocuments() {
