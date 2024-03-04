@@ -53,12 +53,12 @@ export class VectorStoreService {
 
   async addModels(
     vectorStore: VectorStoreType,
-    output: Document[],
+    documents: Document[],
     id: string,
   ) {
     await vectorStore.addModels(
       await this.prismaService.$transaction(
-        output.map((chunk) =>
+        documents.map((chunk) =>
           this.prismaService.embedding.create({
             data: {
               content: chunk.pageContent,

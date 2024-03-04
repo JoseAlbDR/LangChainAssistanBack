@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
@@ -61,13 +65,13 @@ export class DocumentsService {
         chunkOverlap: 20,
       });
 
-      let output: Document[];
+      let documents: Document[];
 
       if (document.mimetype === 'application/pdf')
-        output = await this.loadPdfDocument(filePath, splitter);
+        documents = await this.loadPdfDocument(filePath, splitter);
 
       if (document.mimetype === 'text/plain')
-        output = await this.loadTextDocument(filePath, splitter);
+        documents = await this.loadTextDocument(filePath, splitter);
 
       const exist = await this.prismaService.document.findUnique({
         where: {
@@ -93,7 +97,7 @@ export class DocumentsService {
 
       await this.vectorStoreService.addModels(
         vectorStore,
-        output,
+        documents,
         newDocument.id,
       );
     } catch (err) {
@@ -120,6 +124,9 @@ export class DocumentsService {
         name: document,
       },
     });
+
+    if (!foundDocument)
+      throw new NotFoundException(`Document ${document} not found`);
 
     return foundDocument;
   }
