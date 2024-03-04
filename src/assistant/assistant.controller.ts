@@ -13,7 +13,7 @@ import {
 import { AssistantService } from './assistant.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
-import { UserQuestionDto } from '../shared/dtos/user-question.dto';
+import { AssistantQuestionDto } from './dtos/assistant-question.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('assistant')
@@ -45,7 +45,7 @@ export class AssistantController {
 
   @Post('user-question')
   async userQuestion(
-    @Body() userQuestionDto: UserQuestionDto,
+    @Body() userQuestionDto: AssistantQuestionDto,
     @Res() res: Response,
   ) {
     const { question, document } = userQuestionDto;

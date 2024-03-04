@@ -1,26 +1,46 @@
-import { Injectable } from '@nestjs/common';
-import { CreateChatgptDto } from './dto/user-question.dto';
-import { UpdateChatgptDto } from './dto/update-chatgpt.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { ChatOpenAI } from '@langchain/openai';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 
 @Injectable()
 export class ChatgptService {
-  create(createChatgptDto: CreateChatgptDto) {
-    return 'This action adds a new chatgpt';
+  private readonly model: ChatOpenAI;
+  private readonly stringParser = new StringOutputParser();
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
+  ) {
+    this.model = new ChatOpenAI(this.openAIConfig);
   }
 
-  findAll() {
-    return `This action returns all chatgpt`;
+  private generateAnswerChain() {
+    const answerTemplate = `
+      You are a model called PersonalGPT which interacts in a conversational way. The dialogue format makes it possible for you to answer followup questions, admit its mistakes, challenge incorrect premises, and reject inappropriate requests.
+      Your task is to answer the given user question 
+      Always answer in the same language you were asked in
+      Don't make up the answer, if you really don't know the answer to the given question, suggest some resource were the user could find the answer.
+      question: {question}
+      answer: 
+    `;
+
+    const answerPrompt = PromptTemplate.fromTemplate(answerTemplate);
+
+    const answerChain = answerPrompt.pipe(this.model).pipe(this.stringParser);
+
+    return answerChain;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} chatgpt`;
-  }
+  async getChatgptAnswer(question: string) {
+    const answerChain = this.generateAnswerChain();
 
-  update(id: number, updateChatgptDto: UpdateChatgptDto) {
-    return `This action updates a #${id} chatgpt`;
-  }
+    const stream = await answerChain.stream({
+      question,
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} chatgpt`;
+    return stream;
   }
 }

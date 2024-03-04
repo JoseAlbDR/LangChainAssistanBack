@@ -14,12 +14,7 @@ import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import * as fs from 'fs';
 import * as path from 'path';
-
-interface OpenAIConfig {
-  openAIApiKey: string;
-  temperature: number;
-  maxTokens: number;
-}
+import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 
 @Injectable()
 export class AssistantService {
@@ -34,13 +29,7 @@ export class AssistantService {
     private readonly prismaService: PrismaService,
     @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {
-    const { openAIApiKey, maxTokens, temperature } = this.openAIConfig;
-    this.model = new ChatOpenAI({
-      modelName: 'gpt-3.5-turbo-0125',
-      openAIApiKey,
-      temperature,
-      maxTokens,
-    });
+    this.model = new ChatOpenAI(this.openAIConfig);
   }
 
   private generateStandAloneQuestionChain() {

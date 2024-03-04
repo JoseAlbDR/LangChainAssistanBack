@@ -11,6 +11,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
     {
       provide: 'OPENAI_CONFIG',
       useValue: {
+        modelName: 'gpt-3.5-turbo-0125',
         openAIApiKey: process.env.OPENAI_API_KEY,
         temperature: 0,
         maxTokens: 100,
