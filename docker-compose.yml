@@ -1,10 +1,11 @@
 version: '3.8'
 
 services:
-  db:
+  documents:
     image: ankane/pgvector
+    container_name: documents
     ports:
-      - 5777:5432
+      - 5432:5432
     volumes:
       - db:/var/lib/postgresql/data
     environment:
@@ -13,5 +14,15 @@ services:
       - POSTGRES_DB=${DB_NAME}
     restart: always
 
+  chat-history:
+    image: mongo:7.0.5
+    restart: always
+    ports:
+      - '27017:27017'
+    container_name: chat-history
+    volumes:
+      - mongo:/data/db
+
 volumes:
   db:
+  mongo:

@@ -18,8 +18,8 @@ import { DocumentsService } from 'src/documents/documents.service';
       useValue: {
         modelName: 'gpt-3.5-turbo-0125',
         openAIApiKey: process.env.OPENAI_API_KEY,
-        temperature: 0,
-        maxTokens: 100,
+        temperature: 0.7,
+        maxTokens: 200,
       },
     },
   ],
