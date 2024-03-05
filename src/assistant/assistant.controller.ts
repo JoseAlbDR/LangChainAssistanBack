@@ -4,6 +4,7 @@ import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
 import { AssistantQuestionDto } from './dtos/assistant-question.dto';
 import { ChainValues } from '@langchain/core/utils/types';
+import { Readable } from 'stream';
 
 @Controller('assistant')
 export class AssistantController {
@@ -23,6 +24,29 @@ export class AssistantController {
     res.end();
   }
 
+  private async returnStream(res: Response, response: string) {
+    function* chunkText(text: string, chunkSize: number) {
+      for (let i = 0; i < text.length; i += chunkSize) {
+        yield text.slice(i, i + chunkSize);
+      }
+    }
+
+    const chunkSize = 10;
+    const chunkGenerator = chunkText(response, chunkSize);
+
+    const readable = Readable.from(chunkGenerator);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(HttpStatus.OK);
+
+    for await (const chunk of readable) {
+      res.write(chunk);
+      await new Promise((resolve) => setTimeout(resolve, 50)); // Esperar un breve período antes de enviar el siguiente chunk
+    }
+
+    res.end();
+  }
+
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: AssistantQuestionDto,
@@ -30,11 +54,11 @@ export class AssistantController {
   ) {
     const { question, document } = userQuestionDto;
 
-    const stream = await this.assistantService.getAssistantAnswer(
+    const response = await this.assistantService.getAssistantAnswer(
       document,
       question,
     );
 
-    return this.getStream(res, stream);
+    return this.returnStream(res, response);
   }
 }

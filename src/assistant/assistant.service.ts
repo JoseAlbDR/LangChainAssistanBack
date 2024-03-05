@@ -174,12 +174,12 @@ export class AssistantService {
 
     const chat_history = await memory.chatHistory.getMessages();
 
-    const stream = await agentExecutor.stream({
+    const response = await agentExecutor.invoke({
       outputKey: 'output',
       input: question,
       chat_history,
     });
 
-    return stream;
+    return response.output;
   }
 }
