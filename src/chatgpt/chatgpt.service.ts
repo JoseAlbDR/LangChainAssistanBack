@@ -24,8 +24,7 @@ export class ChatgptService {
     return await this.memoryService.getHistory(name);
   }
 
-  async getChatgptAnswer(question: string) {
-    // Get mongodb collection from memoryService
+  private async createMemory() {
     const collection = await this.memoryService.getCollection();
 
     // Session id for chatbot
@@ -40,6 +39,10 @@ export class ChatgptService {
       }),
     });
 
+    return memory;
+  }
+
+  private createPrompt() {
     // Chatbot prompt with instructions
     const prompt = ChatPromptTemplate.fromTemplate(`
       You are an AI assistant called Max. You are here to help answer questions and provide information to the best of your ability.
@@ -47,6 +50,10 @@ export class ChatgptService {
       {input}
     `);
 
+    return prompt;
+  }
+
+  private createChain(prompt: ChatPromptTemplate, memory: BufferMemory) {
     // Using Chain Class
     // const chain = new ConversationChain({ llm: this.model, prompt, memory });
 
@@ -68,11 +75,14 @@ export class ChatgptService {
       this.stringOutputParser,
     ]);
 
-    // Get response
-    const response = await chain.invoke({
-      input: question,
-    });
+    return chain;
+  }
 
+  private async updateMemory(
+    memory: BufferMemory,
+    question: string,
+    response: string,
+  ) {
     //Update memory
     await memory.saveContext(
       {
@@ -82,6 +92,21 @@ export class ChatgptService {
         output: response,
       },
     );
+  }
+
+  async getChatgptAnswer(question: string) {
+    const memory = await this.createMemory();
+
+    const prompt = this.createPrompt();
+
+    const chain = this.createChain(prompt, memory);
+
+    // Get response
+    const response = await chain.invoke({
+      input: question,
+    });
+
+    await this.updateMemory(memory, question, response);
 
     return response;
   }
