@@ -1,4 +1,12 @@
-import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { AssistantService } from './assistant.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
@@ -60,5 +68,12 @@ export class AssistantController {
     );
 
     return this.returnStream(res, response);
+  }
+
+  @Get('chat-history/:document')
+  async getChatHistory(@Param('document') document: string) {
+    const memory = this.assistantService.getChatHistory(document);
+
+    return memory;
   }
 }

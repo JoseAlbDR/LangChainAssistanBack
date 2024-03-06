@@ -17,9 +17,9 @@ import { DocumentsService } from 'src/documents/documents.service';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { BufferMemory } from 'langchain/memory';
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
-import { MongoClient } from 'mongodb';
 import { createOpenAIFunctionsAgent, AgentExecutor } from 'langchain/agents';
 import { createRetrieverTool } from 'langchain/tools/retriever';
+import { MemoryService } from 'src/shared/services/memory/memory.service';
 
 @Injectable()
 export class AssistantService {
@@ -30,6 +30,7 @@ export class AssistantService {
   constructor(
     private readonly documentsService: DocumentsService,
     private readonly vectorStoreService: VectorStoreService,
+    private readonly memoryService: MemoryService,
     @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {
     this.model = new ChatOpenAI(this.openAIConfig);
@@ -124,9 +125,7 @@ export class AssistantService {
   async getAssistantAnswer(document: string, question: string) {
     const { id } = await this.documentsService.findOne(document);
 
-    const client = new MongoClient('mongodb://localhost:27017/chatbot');
-    await client.connect();
-    const collection = client.db('chatbot').collection('memory');
+    const collection = await this.memoryService.getCollection();
 
     const memory = new BufferMemory({
       returnMessages: true,
@@ -181,5 +180,10 @@ export class AssistantService {
     });
 
     return response.output;
+  }
+
+  async getChatHistory(document: string) {
+    const memory = await this.memoryService.getHistory(document);
+    return memory;
   }
 }

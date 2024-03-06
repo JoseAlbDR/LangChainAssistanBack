@@ -5,6 +5,7 @@ import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { VectorStoreModule } from 'src/shared/services/vector-store/vector-store.module';
 import { DocumentsModule } from 'src/documents/documents.module';
 import { DocumentsService } from 'src/documents/documents.service';
+import { MemoryService } from 'src/shared/services/memory/memory.service';
 
 @Module({
   imports: [VectorStoreModule, DocumentsModule],
@@ -13,6 +14,7 @@ import { DocumentsService } from 'src/documents/documents.service';
     AssistantService,
     PrismaService,
     DocumentsService,
+    MemoryService,
     {
       provide: 'OPENAI_CONFIG',
       useValue: {
