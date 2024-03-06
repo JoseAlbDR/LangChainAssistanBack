@@ -122,7 +122,7 @@ export class AssistantService {
   //     .join('\n');
   // }
 
-  async getAssistantAnswer(document: string, question: string) {
+  private async createMemory(document: string) {
     const { id } = await this.documentsService.findOne(document);
 
     const collection = await this.memoryService.getCollection();
@@ -137,7 +137,10 @@ export class AssistantService {
         sessionId: id,
       }),
     });
+    return { memory, id };
+  }
 
+  private createPrompt() {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
@@ -148,6 +151,10 @@ export class AssistantService {
       new MessagesPlaceholder('agent_scratchpad'),
     ]);
 
+    return prompt;
+  }
+
+  private createRetrieverTool(id: string) {
     const vectorStore = this.vectorStoreService.createVectorStore(id);
 
     const retriever = vectorStore.asRetriever();
@@ -157,8 +164,14 @@ export class AssistantService {
       description: `Tool to search information about ${document}`,
     });
 
-    const tools = [retrieverTool];
+    return retrieverTool;
+  }
 
+  private async createAgentExecutor(
+    tools: any,
+    prompt: ChatPromptTemplate,
+    memory: BufferMemory,
+  ) {
     const agent = await createOpenAIFunctionsAgent({
       llm: this.model,
       tools,
@@ -170,6 +183,20 @@ export class AssistantService {
       tools,
       memory,
     });
+
+    return agentExecutor;
+  }
+
+  async getAssistantAnswer(document: string, question: string) {
+    const { memory, id } = await this.createMemory(document);
+
+    const prompt = this.createPrompt();
+
+    const retrieverTool = this.createRetrieverTool(id);
+
+    const tools = [retrieverTool];
+
+    const agentExecutor = await this.createAgentExecutor(tools, prompt, memory);
 
     const chat_history = await memory.chatHistory.getMessages();
 
