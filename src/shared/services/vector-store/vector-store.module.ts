@@ -1,16 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { VectorStoreService } from './vector-store.service';
-import { ModelInitService } from '../model-init/model-init.service';
+
 import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
+import { SharedModule } from '../shared.module';
 
 @Module({
-  providers: [
-    PrismaService,
-    VectorStoreService,
-    ModelInitService,
-    OpenaiConfigService,
-  ],
-  exports: [VectorStoreService],
+  imports: [SharedModule],
+  providers: [PrismaService, OpenaiConfigService],
 })
 export class VectorStoreModule {}

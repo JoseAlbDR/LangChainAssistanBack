@@ -1,21 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ChatgptService } from './chatgpt.service';
 import { ChatgptController } from './chatgpt.controller';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
-import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
-import { MemoryService } from 'src/shared/services/memory/memory.service';
-import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 import { SharedModule } from 'src/shared/services/shared.module';
+import { ChatgptService } from './chatgpt.service';
 
 @Module({
   imports: [SharedModule],
   controllers: [ChatgptController],
   providers: [
     ChatgptService,
-    PrismaService,
-    VectorStoreService,
-    MemoryService,
-    OpenaiConfigService,
     // {
     //   provide: 'OPENAI_CONFIG',
     //   useValue: {

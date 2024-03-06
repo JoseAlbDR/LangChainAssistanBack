@@ -62,8 +62,8 @@ export class ChatgptController {
 
   @Get('chat-history')
   async getChatHistory() {
-    const memory = this.chatgptService.getChatHistory('chatgptbot');
+    const memory = await this.chatgptService.getChatHistory('chatgptbot');
 
-    return memory;
+    return memory || [];
   }
 }

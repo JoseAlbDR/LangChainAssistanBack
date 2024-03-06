@@ -190,9 +190,7 @@ export class AssistantService {
   }
 
   async getAssistantAnswer(document: string, question: string) {
-    const config = await this.openAIConfigService.getConfig();
-
-    const model = await this.modelInitService.initModel(config);
+    const model = this.modelInitService.getModel();
 
     const { memory, id } = await this.createMemory(document);
 

@@ -6,6 +6,7 @@ import { DocumentsService } from 'src/documents/documents.service';
 import { VectorStoreService } from './vector-store/vector-store.service';
 import { PrismaService } from './prisma/prisma.service';
 import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
+import { MemoryService } from './memory/memory.service';
 
 @Module({
   providers: [
@@ -15,7 +16,16 @@ import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
     ModelInitService,
     PrismaService,
     OpenaiConfigService,
+    MemoryService,
   ],
-  exports: [ModelInitService],
+  exports: [
+    ModelInitService,
+    DocumentsService,
+    VectorStoreService,
+    ModelInitService,
+    PrismaService,
+    OpenaiConfigService,
+    MemoryService,
+  ],
 })
 export class SharedModule {}

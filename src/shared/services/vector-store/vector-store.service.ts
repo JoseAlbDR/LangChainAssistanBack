@@ -4,7 +4,6 @@ import { Embedding, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Document } from 'langchain/document';
 import { ModelInitService } from '../model-init/model-init.service';
-import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 
 // Define the return type of the method
 type VectorStoreType = PrismaVectorStore<
@@ -31,15 +30,10 @@ export class VectorStoreService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly embeddingInitService: ModelInitService,
-    private readonly openAIConfigService: OpenaiConfigService,
   ) {}
 
   async createVectorStore(id: string): Promise<VectorStoreType> {
-    const config = await this.openAIConfigService.getConfig();
-
-    const embeddings = await this.embeddingInitService.initEmbedding(
-      config.openAIApiKey,
-    );
+    const embeddings = this.embeddingInitService.getEmbeddings();
 
     return PrismaVectorStore.withModel<Embedding>(this.prismaService).create(
       embeddings,

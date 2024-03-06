@@ -13,6 +13,8 @@ import { VectorStoreService } from 'src/shared/services/vector-store/vector-stor
 
 @Injectable()
 export class DocumentsService {
+  private document: { id: string; name: string };
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly vectorStoreService: VectorStoreService,
@@ -84,23 +86,28 @@ export class DocumentsService {
           `Document ${document.originalname} already exists`,
         );
 
-      const newDocument = await this.prismaService.document.create({
+      this.document = await this.prismaService.document.create({
         data: {
           name: document.originalname,
         },
       });
 
       const vectorStore = await this.vectorStoreService.createVectorStore(
-        newDocument.id,
+        this.document.id,
       );
+
+      console.log({ vectorStore });
 
       await this.vectorStoreService.addModels(
         vectorStore,
         documents,
-        newDocument.id,
+        this.document.id,
       );
     } catch (err) {
       console.log(err);
+      await this.prismaService.document.delete({
+        where: { id: this.document.id },
+      });
       throw err;
     } finally {
       await this.prismaService.$disconnect();
