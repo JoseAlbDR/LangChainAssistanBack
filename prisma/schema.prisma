@@ -13,6 +13,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model ChatConfig {
+  name         String @id
+  modelName    String @default("gpt-3.5-turbo-0125")
+  openAIApiKey String @default("")
+  temperature  Float  @default(0.7)
+  maxTokens    Int    @default(250)
+}
+
 model Document {
   id         String      @id @default(uuid())
   name       String      @unique
