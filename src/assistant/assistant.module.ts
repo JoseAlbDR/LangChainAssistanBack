@@ -15,15 +15,15 @@ import { MemoryService } from 'src/shared/services/memory/memory.service';
     PrismaService,
     DocumentsService,
     MemoryService,
-    {
-      provide: 'OPENAI_CONFIG',
-      useValue: {
-        modelName: 'gpt-3.5-turbo-0125',
-        openAIApiKey: process.env.OPENAI_API_KEY,
-        temperature: 0.7,
-        maxTokens: 200,
-      },
-    },
+    // {
+    //   provide: 'OPENAI_CONFIG',
+    //   useValue: {
+    //     modelName: 'gpt-3.5-turbo-0125',
+    //     openAIApiKey: process.env.OPENAI_API_KEY,
+    //     temperature: 0.7,
+    //     maxTokens: 500,
+    //   },
+    // },
   ],
 })
 export class AssistantModule {}

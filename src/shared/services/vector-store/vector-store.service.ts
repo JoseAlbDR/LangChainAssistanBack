@@ -27,12 +27,34 @@ type VectorStoreType = PrismaVectorStore<
 
 @Injectable()
 export class VectorStoreService {
-  private readonly embeddings = new OpenAIEmbeddings({
-    modelName: 'text-embedding-3-small',
-  });
+  private embeddings: OpenAIEmbeddings;
   constructor(private readonly prismaService: PrismaService) {}
 
-  createVectorStore(id: string): VectorStoreType {
+  private async initEmbeddings() {
+    try {
+      const openAIConfig = await this.prismaService.chatConfig.findUnique({
+        where: {
+          id: 'chatgptbot',
+        },
+        select: {
+          openAIApiKey: true,
+        },
+      });
+
+      if (openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY) {
+        console.log('Embeddings Model initialized successfully');
+        this.embeddings = new OpenAIEmbeddings({
+          modelName: 'text-embedding-3-small',
+          openAIApiKey:
+            openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
+        });
+      }
+    } catch (error) {}
+  }
+
+  async createVectorStore(id: string): Promise<VectorStoreType> {
+    if (!this.embeddings) await this.initEmbeddings();
+
     return PrismaVectorStore.withModel<Embedding>(this.prismaService).create(
       this.embeddings,
       {
@@ -57,6 +79,8 @@ export class VectorStoreService {
     documents: Document[],
     id: string,
   ) {
+    if (!this.embeddings) await this.initEmbeddings();
+
     await vectorStore.addModels(
       await this.prismaService.$transaction(
         documents.map((chunk) =>

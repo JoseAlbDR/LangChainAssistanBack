@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   // RunnablePassthrough,
   RunnableSequence,
@@ -10,7 +10,7 @@ import {
   MessagesPlaceholder,
   // PromptTemplate,
 } from '@langchain/core/prompts';
-import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
+// import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 import { DocumentsService } from 'src/documents/documents.service';
 // import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
@@ -20,10 +20,11 @@ import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { createOpenAIFunctionsAgent, AgentExecutor } from 'langchain/agents';
 import { createRetrieverTool } from 'langchain/tools/retriever';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 
 @Injectable()
 export class AssistantService {
-  private readonly model: ChatOpenAI;
+  private model: ChatOpenAI;
   // private readonly passThrough = new RunnablePassthrough();
   // private readonly stringParser = new StringOutputParser();
 
@@ -31,9 +32,33 @@ export class AssistantService {
     private readonly documentsService: DocumentsService,
     private readonly vectorStoreService: VectorStoreService,
     private readonly memoryService: MemoryService,
-    @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
-  ) {
-    this.model = new ChatOpenAI(this.openAIConfig);
+    private readonly prismaService: PrismaService,
+    // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
+  ) {}
+
+  public async initModel() {
+    try {
+      const openAIConfig = await this.prismaService.chatConfig.findUnique({
+        where: { id: 'chatgptconfig' },
+        select: {
+          maxTokens: true,
+          modelName: true,
+          openAIApiKey: true,
+          temperature: true,
+        },
+      });
+      if (openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY) {
+        console.log('Assistant Model initialized successfully');
+        this.model = new ChatOpenAI({
+          openAIApiKey:
+            openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
+          ...openAIConfig,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error);
+    }
   }
 
   // private generateStandAloneQuestionChain() {
@@ -64,7 +89,7 @@ export class AssistantService {
         `Document ${document} does not exist, please first upload`,
       );
 
-    const vectorStore = this.vectorStoreService.createVectorStore(id);
+    const vectorStore = await this.vectorStoreService.createVectorStore(id);
 
     const retriever = vectorStore.asRetriever();
 
@@ -140,7 +165,7 @@ export class AssistantService {
     return { memory, id };
   }
 
-  private createPrompt() {
+  private createPrompt(document: string) {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
@@ -154,8 +179,8 @@ export class AssistantService {
     return prompt;
   }
 
-  private createRetrieverTool(id: string) {
-    const vectorStore = this.vectorStoreService.createVectorStore(id);
+  private async createRetrieverTool(id: string, document: string) {
+    const vectorStore = await this.vectorStoreService.createVectorStore(id);
 
     const retriever = vectorStore.asRetriever();
 
@@ -188,11 +213,13 @@ export class AssistantService {
   }
 
   async getAssistantAnswer(document: string, question: string) {
+    if (!this.model) await this.initModel();
+
     const { memory, id } = await this.createMemory(document);
 
-    const prompt = this.createPrompt();
+    const prompt = this.createPrompt(document);
 
-    const retrieverTool = this.createRetrieverTool(id);
+    const retrieverTool = await this.createRetrieverTool(id, document);
 
     const tools = [retrieverTool];
 

@@ -1,23 +1,45 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
-import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 // import { ConversationChain } from 'langchain/chains';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
 import { BufferMemory } from 'langchain/memory';
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
+import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 
 @Injectable()
 export class ChatgptService {
-  private readonly model: ChatOpenAI;
+  private model: ChatOpenAI;
   private readonly stringOutputParser = new StringOutputParser();
   constructor(
     private readonly memoryService: MemoryService,
-    @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
-  ) {
-    this.model = new ChatOpenAI(this.openAIConfig);
+    private readonly prismaService: PrismaService,
+    // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
+  ) {}
+
+  public async initModel() {
+    try {
+      const openAIConfig = await this.prismaService.chatConfig.findUnique({
+        where: { id: 'chatgptconfig' },
+        select: {
+          maxTokens: true,
+          modelName: true,
+          openAIApiKey: true,
+          temperature: true,
+        },
+      });
+
+      console.log('Assistant Model initialized successfully');
+      this.model = new ChatOpenAI({
+        openAIApiKey: openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
+        ...openAIConfig,
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error);
+    }
   }
 
   async getChatHistory(name: string) {
@@ -95,6 +117,8 @@ export class ChatgptService {
   }
 
   async getChatgptAnswer(question: string) {
+    if (!this.model) await this.initModel();
+
     const memory = await this.createMemory();
 
     const prompt = this.createPrompt();

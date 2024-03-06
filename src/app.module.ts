@@ -5,9 +5,10 @@ import { ChatgptModule } from './chatgpt/chatgpt.module';
 import { DocumentsModule } from './documents/documents.module';
 import { VectorStoreService } from './shared/services/vector-store/vector-store.service';
 import { MemoryService } from './shared/services/memory/memory.service';
+import { OpenaiConfigModule } from './openai-config/openai-config.module';
 
 @Module({
-  imports: [AssistantModule, ChatgptModule, DocumentsModule],
+  imports: [AssistantModule, ChatgptModule, DocumentsModule, OpenaiConfigModule],
   controllers: [],
   providers: [PrismaService, VectorStoreService, MemoryService],
 })

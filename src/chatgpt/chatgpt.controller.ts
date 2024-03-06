@@ -60,7 +60,7 @@ export class ChatgptController {
     return this.returnStream(res, stream);
   }
 
-  @Get('chat-history/')
+  @Get('chat-history')
   async getChatHistory() {
     const memory = this.chatgptService.getChatHistory('chatgptbot');
 
