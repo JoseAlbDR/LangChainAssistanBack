@@ -20,6 +20,10 @@ export class ChatgptService {
     this.model = new ChatOpenAI(this.openAIConfig);
   }
 
+  async getChatHistory(name: string) {
+    return await this.memoryService.getHistory(name);
+  }
+
   async getChatgptAnswer(question: string) {
     // Get mongodb collection from memoryService
     const collection = await this.memoryService.getCollection();

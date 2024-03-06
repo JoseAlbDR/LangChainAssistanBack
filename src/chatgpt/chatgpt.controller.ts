@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpStatus, Get } from '@nestjs/common';
 import { ChatgptService } from './chatgpt.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
@@ -58,5 +58,12 @@ export class ChatgptController {
     const stream = await this.chatgptService.getChatgptAnswer(question);
 
     return this.returnStream(res, stream);
+  }
+
+  @Get('chat-history/')
+  async getChatHistory() {
+    const memory = this.chatgptService.getChatHistory('chatgptbot');
+
+    return memory;
   }
 }
