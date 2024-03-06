@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 // import { ConversationChain } from 'langchain/chains';
@@ -7,40 +7,16 @@ import { BufferMemory } from 'langchain/memory';
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
+import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
 
 @Injectable()
 export class ChatgptService {
-  private model: ChatOpenAI;
   private readonly stringOutputParser = new StringOutputParser();
   constructor(
     private readonly memoryService: MemoryService,
-    private readonly prismaService: PrismaService,
+    private readonly modelInitService: ModelInitService,
     // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {}
-
-  public async initModel() {
-    try {
-      const openAIConfig = await this.prismaService.chatConfig.findUnique({
-        where: { id: 'chatgptconfig' },
-        select: {
-          maxTokens: true,
-          modelName: true,
-          openAIApiKey: true,
-          temperature: true,
-        },
-      });
-
-      console.log('Assistant Model initialized successfully');
-      this.model = new ChatOpenAI({
-        openAIApiKey: openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
-        ...openAIConfig,
-      });
-    } catch (error) {
-      console.log(error);
-      throw new BadRequestException(error);
-    }
-  }
 
   async getChatHistory(name: string) {
     return await this.memoryService.getHistory(name);
@@ -75,7 +51,11 @@ export class ChatgptService {
     return prompt;
   }
 
-  private createChain(prompt: ChatPromptTemplate, memory: BufferMemory) {
+  private createChain(
+    prompt: ChatPromptTemplate,
+    memory: BufferMemory,
+    model: ChatOpenAI,
+  ) {
     // Using Chain Class
     // const chain = new ConversationChain({ llm: this.model, prompt, memory });
 
@@ -93,7 +73,7 @@ export class ChatgptService {
       },
       // Chain prompt, model and output parser
       prompt,
-      this.model,
+      model,
       this.stringOutputParser,
     ]);
 
@@ -117,13 +97,17 @@ export class ChatgptService {
   }
 
   async getChatgptAnswer(question: string) {
-    if (!this.model) await this.initModel();
+    // const config = await this.openAiConfigService.getConfig();
+
+    // const model = await this.modelInitService.initModel(config);
+
+    const model = this.modelInitService.getModel();
 
     const memory = await this.createMemory();
 
     const prompt = this.createPrompt();
 
-    const chain = this.createChain(prompt, memory);
+    const chain = this.createChain(prompt, memory, model);
 
     // Get response
     const response = await chain.invoke({

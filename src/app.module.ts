@@ -6,10 +6,25 @@ import { DocumentsModule } from './documents/documents.module';
 import { VectorStoreService } from './shared/services/vector-store/vector-store.service';
 import { MemoryService } from './shared/services/memory/memory.service';
 import { OpenaiConfigModule } from './openai-config/openai-config.module';
+import { ModelInitService } from './shared/services/model-init/model-init.service';
+import { OpenaiConfigService } from './openai-config/openai-config.service';
+import { SharedModule } from './shared/services/shared.module';
 
 @Module({
-  imports: [AssistantModule, ChatgptModule, DocumentsModule, OpenaiConfigModule],
+  imports: [
+    AssistantModule,
+    ChatgptModule,
+    DocumentsModule,
+    OpenaiConfigModule,
+    SharedModule,
+  ],
   controllers: [],
-  providers: [PrismaService, VectorStoreService, MemoryService],
+  providers: [
+    PrismaService,
+    VectorStoreService,
+    MemoryService,
+    ModelInitService,
+    OpenaiConfigService,
+  ],
 })
 export class AppModule {}

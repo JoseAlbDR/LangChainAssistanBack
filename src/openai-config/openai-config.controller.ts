@@ -23,7 +23,7 @@ export class OpenaiConfigController {
   }
 
   @Put('')
-  async updateConfig(config: UpdateOpenaiConfigDto) {
+  async updateConfig(@Body() config: UpdateOpenaiConfigDto) {
     if (!config) return 'Nothing to update';
     await this.openaiConfigService.updateConfig(config);
   }

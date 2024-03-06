@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
-import { OpenAIEmbeddings } from '@langchain/openai';
 import { Embedding, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Document } from 'langchain/document';
+import { ModelInitService } from '../model-init/model-init.service';
+import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 
 // Define the return type of the method
 type VectorStoreType = PrismaVectorStore<
@@ -27,36 +28,21 @@ type VectorStoreType = PrismaVectorStore<
 
 @Injectable()
 export class VectorStoreService {
-  private embeddings: OpenAIEmbeddings;
-  constructor(private readonly prismaService: PrismaService) {}
-
-  private async initEmbeddings() {
-    try {
-      const openAIConfig = await this.prismaService.chatConfig.findUnique({
-        where: {
-          id: 'chatgptbot',
-        },
-        select: {
-          openAIApiKey: true,
-        },
-      });
-
-      if (openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY) {
-        console.log('Embeddings Model initialized successfully');
-        this.embeddings = new OpenAIEmbeddings({
-          modelName: 'text-embedding-3-small',
-          openAIApiKey:
-            openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
-        });
-      }
-    } catch (error) {}
-  }
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly embeddingInitService: ModelInitService,
+    private readonly openAIConfigService: OpenaiConfigService,
+  ) {}
 
   async createVectorStore(id: string): Promise<VectorStoreType> {
-    if (!this.embeddings) await this.initEmbeddings();
+    const config = await this.openAIConfigService.getConfig();
+
+    const embeddings = await this.embeddingInitService.initEmbedding(
+      config.openAIApiKey,
+    );
 
     return PrismaVectorStore.withModel<Embedding>(this.prismaService).create(
-      this.embeddings,
+      embeddings,
       {
         prisma: Prisma,
         tableName: 'Embedding',
@@ -79,8 +65,6 @@ export class VectorStoreService {
     documents: Document[],
     id: string,
   ) {
-    if (!this.embeddings) await this.initEmbeddings();
-
     await vectorStore.addModels(
       await this.prismaService.$transaction(
         documents.map((chunk) =>

@@ -6,15 +6,18 @@ import { VectorStoreModule } from 'src/shared/services/vector-store/vector-store
 import { DocumentsModule } from 'src/documents/documents.module';
 import { DocumentsService } from 'src/documents/documents.service';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
+import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
+import { SharedModule } from 'src/shared/services/shared.module';
 
 @Module({
-  imports: [VectorStoreModule, DocumentsModule],
+  imports: [VectorStoreModule, DocumentsModule, SharedModule],
   controllers: [AssistantController],
   providers: [
     AssistantService,
     PrismaService,
     DocumentsService,
     MemoryService,
+    OpenaiConfigService,
     // {
     //   provide: 'OPENAI_CONFIG',
     //   useValue: {

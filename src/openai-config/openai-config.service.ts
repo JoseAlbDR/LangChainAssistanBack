@@ -3,21 +3,34 @@ import { CreateOpenaiConfigDto } from './dto/create-openai-config.dto';
 // import { UpdateOpenaiConfigDto } from './dto/update-openai-config.dto';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { UpdateOpenaiConfigDto } from './dto/update-openai-config.dto';
+import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
 
 @Injectable()
 export class OpenaiConfigService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly modelInitService: ModelInitService,
+  ) {}
 
   async saveConfig(createOpenaiConfigDto: CreateOpenaiConfigDto) {
     try {
-      await this.prismaService.chatConfig.create({
+      const config = await this.prismaService.chatConfig.create({
         data: {
           id: 'chatgptconfig',
           openAIApiKey:
             createOpenaiConfigDto.openAIApiKey || process.env.OPENAI_API_KEY,
           ...createOpenaiConfigDto,
         },
+        select: {
+          maxTokens: true,
+          modelName: true,
+          openAIApiKey: true,
+          temperature: true,
+        },
       });
+
+      await this.modelInitService.initModel(config);
+      await this.modelInitService.initEmbedding(config.openAIApiKey);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
@@ -44,9 +57,18 @@ export class OpenaiConfigService {
   }
 
   async updateConfig(config: UpdateOpenaiConfigDto) {
-    await this.prismaService.chatConfig.update({
+    const updatedConfig = await this.prismaService.chatConfig.update({
       where: { id: 'chatgptconfig' },
       data: config,
+      select: {
+        maxTokens: true,
+        modelName: true,
+        openAIApiKey: true,
+        temperature: true,
+      },
     });
+
+    await this.modelInitService.initModel(updatedConfig);
+    await this.modelInitService.initEmbedding(updatedConfig.openAIApiKey);
   }
 }

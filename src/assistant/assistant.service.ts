@@ -4,7 +4,6 @@ import {
   RunnableSequence,
 } from '@langchain/core/runnables';
 // import { StringOutputParser } from '@langchain/core/output_parsers';
-import { ChatOpenAI } from '@langchain/openai';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -20,11 +19,12 @@ import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { createOpenAIFunctionsAgent, AgentExecutor } from 'langchain/agents';
 import { createRetrieverTool } from 'langchain/tools/retriever';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
+import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
+import { ChatOpenAI } from '@langchain/openai';
+import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 
 @Injectable()
 export class AssistantService {
-  private model: ChatOpenAI;
   // private readonly passThrough = new RunnablePassthrough();
   // private readonly stringParser = new StringOutputParser();
 
@@ -32,34 +32,10 @@ export class AssistantService {
     private readonly documentsService: DocumentsService,
     private readonly vectorStoreService: VectorStoreService,
     private readonly memoryService: MemoryService,
-    private readonly prismaService: PrismaService,
+    private readonly modelInitService: ModelInitService,
+    private readonly openAIConfigService: OpenaiConfigService,
     // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {}
-
-  public async initModel() {
-    try {
-      const openAIConfig = await this.prismaService.chatConfig.findUnique({
-        where: { id: 'chatgptconfig' },
-        select: {
-          maxTokens: true,
-          modelName: true,
-          openAIApiKey: true,
-          temperature: true,
-        },
-      });
-      if (openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY) {
-        console.log('Assistant Model initialized successfully');
-        this.model = new ChatOpenAI({
-          openAIApiKey:
-            openAIConfig?.openAIApiKey || process.env.OPENAI_API_KEY,
-          ...openAIConfig,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      throw new BadRequestException(error);
-    }
-  }
 
   // private generateStandAloneQuestionChain() {
   //   const standAloneQuestionTemplate = `Given some conversation history (if any) and a question, convert the question to a standalone question.
@@ -196,9 +172,10 @@ export class AssistantService {
     tools: any,
     prompt: ChatPromptTemplate,
     memory: BufferMemory,
+    model: ChatOpenAI,
   ) {
     const agent = await createOpenAIFunctionsAgent({
-      llm: this.model,
+      llm: model,
       tools,
       prompt,
     });
@@ -213,7 +190,9 @@ export class AssistantService {
   }
 
   async getAssistantAnswer(document: string, question: string) {
-    if (!this.model) await this.initModel();
+    const config = await this.openAIConfigService.getConfig();
+
+    const model = await this.modelInitService.initModel(config);
 
     const { memory, id } = await this.createMemory(document);
 
@@ -223,7 +202,12 @@ export class AssistantService {
 
     const tools = [retrieverTool];
 
-    const agentExecutor = await this.createAgentExecutor(tools, prompt, memory);
+    const agentExecutor = await this.createAgentExecutor(
+      tools,
+      prompt,
+      memory,
+      model,
+    );
 
     const chat_history = await memory.chatHistory.getMessages();
 
