@@ -1,46 +1,84 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
-import { PrismaService } from 'src/shared/services/prisma/prisma.service';
-import { PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
+// import { ConversationChain } from 'langchain/chains';
+import { MemoryService } from 'src/shared/services/memory/memory.service';
+import { BufferMemory } from 'langchain/memory';
+import { MongoDBChatMessageHistory } from '@langchain/mongodb';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RunnableSequence } from '@langchain/core/runnables';
 
 @Injectable()
 export class ChatgptService {
   private readonly model: ChatOpenAI;
-  private readonly stringParser = new StringOutputParser();
-
+  private readonly stringOutputParser = new StringOutputParser();
   constructor(
-    private readonly prismaService: PrismaService,
+    private readonly memoryService: MemoryService,
     @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {
     this.model = new ChatOpenAI(this.openAIConfig);
   }
 
-  private generateAnswerChain() {
-    const answerTemplate = `
-      You are a model called PersonalGPT which interacts in a conversational way. The dialogue format makes it possible for you to answer followup questions, admit its mistakes, challenge incorrect premises, and reject inappropriate requests.
-      Your task is to answer the given user question 
-      Always answer in the same language you were asked in
-      Don't make up the answer, if you really don't know the answer to the given question, suggest some resource were the user could find the answer.
-      question: {question}
-      answer: 
-    `;
-
-    const answerPrompt = PromptTemplate.fromTemplate(answerTemplate);
-
-    const answerChain = answerPrompt.pipe(this.model).pipe(this.stringParser);
-
-    return answerChain;
-  }
-
   async getChatgptAnswer(question: string) {
-    const answerChain = this.generateAnswerChain();
+    // Get mongodb collection from memoryService
+    const collection = await this.memoryService.getCollection();
 
-    const stream = await answerChain.stream({
-      question,
+    // Session id for chatbot
+    const sessionId = 'chatgptbot';
+
+    // Create buffer memory
+    const memory = new BufferMemory({
+      memoryKey: 'history',
+      chatHistory: new MongoDBChatMessageHistory({
+        collection,
+        sessionId,
+      }),
     });
 
-    return stream;
+    // Chatbot prompt with instructions
+    const prompt = ChatPromptTemplate.fromTemplate(`
+      You are an AI assistant called Max. You are here to help answer questions and provide information to the best of your ability.
+      Chat History: {history}
+      {input}
+    `);
+
+    // Using Chain Class
+    // const chain = new ConversationChain({ llm: this.model, prompt, memory });
+
+    // Using LCEL
+    const chain = RunnableSequence.from([
+      // Get initial input and memory
+      {
+        input: (initialInput) => initialInput.input,
+        memory: () => memory.loadMemoryVariables({}),
+      },
+      // Provide input and memory to prompt
+      {
+        input: (previousOutput) => previousOutput.input,
+        history: (previousOutput) => previousOutput.memory.history,
+      },
+      // Chain prompt, model and output parser
+      prompt,
+      this.model,
+      this.stringOutputParser,
+    ]);
+
+    // Get response
+    const response = await chain.invoke({
+      input: question,
+    });
+
+    //Update memory
+    await memory.saveContext(
+      {
+        input: question,
+      },
+      {
+        output: response,
+      },
+    );
+
+    return response;
   }
 }

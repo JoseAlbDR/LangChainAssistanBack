@@ -11,7 +11,7 @@ import {
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-@Controller('documents')
+@Controller('document')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 

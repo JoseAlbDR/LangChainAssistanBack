@@ -3,25 +3,47 @@ import { ChatgptService } from './chatgpt.service';
 import { IterableReadableStream } from '@langchain/core/utils/stream';
 import { Response } from 'express';
 import { ChatGptQuestionDto } from './dtos/chatgpt-question.dto';
+import { ChainValues } from '@langchain/core/utils/types';
+import { Readable } from 'stream';
 
 @Controller('chatgpt')
 export class ChatgptController {
-  private readonly convHistory: string[] = [];
   constructor(private readonly chatgptService: ChatgptService) {}
 
   private async getStream(
     res: Response,
-    stream: IterableReadableStream<string>,
+    stream: IterableReadableStream<ChainValues>,
   ) {
     res.setHeader('Content-Type', 'application/json');
     res.status(HttpStatus.OK);
 
-    let answer = '';
     for await (const chunk of stream) {
-      answer += chunk;
-      res.write(chunk);
+      console.log({ chunk });
+      res.write(chunk.response);
     }
-    this.convHistory.push(answer);
+
+    res.end();
+  }
+
+  private async returnStream(res: Response, response: string) {
+    function* chunkText(text: string, chunkSize: number) {
+      for (let i = 0; i < text.length; i += chunkSize) {
+        yield text.slice(i, i + chunkSize);
+      }
+    }
+
+    const chunkSize = 10;
+    const chunkGenerator = chunkText(response, chunkSize);
+
+    const readable = Readable.from(chunkGenerator);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.status(HttpStatus.OK);
+
+    for await (const chunk of readable) {
+      res.write(chunk);
+      await new Promise((resolve) => setTimeout(resolve, 50)); // Esperar un breve período antes de enviar el siguiente chunk
+    }
 
     res.end();
   }
@@ -35,6 +57,6 @@ export class ChatgptController {
 
     const stream = await this.chatgptService.getChatgptAnswer(question);
 
-    return this.getStream(res, stream);
+    return this.returnStream(res, stream);
   }
 }

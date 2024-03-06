@@ -3,6 +3,7 @@ import { ChatgptService } from './chatgpt.service';
 import { ChatgptController } from './chatgpt.controller';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
+import { MemoryService } from 'src/shared/services/memory/memory.service';
 
 @Module({
   controllers: [ChatgptController],
@@ -10,6 +11,7 @@ import { VectorStoreService } from 'src/shared/services/vector-store/vector-stor
     ChatgptService,
     PrismaService,
     VectorStoreService,
+    MemoryService,
     {
       provide: 'OPENAI_CONFIG',
       useValue: {
