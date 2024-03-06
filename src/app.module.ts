@@ -4,10 +4,11 @@ import { AssistantModule } from './assistant/assistant.module';
 import { ChatgptModule } from './chatgpt/chatgpt.module';
 import { DocumentsModule } from './documents/documents.module';
 import { VectorStoreService } from './shared/services/vector-store/vector-store.service';
+import { MemoryService } from './shared/services/memory/memory.service';
 
 @Module({
   imports: [AssistantModule, ChatgptModule, DocumentsModule],
   controllers: [],
-  providers: [PrismaService, VectorStoreService],
+  providers: [PrismaService, VectorStoreService, MemoryService],
 })
 export class AppModule {}
