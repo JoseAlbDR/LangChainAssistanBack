@@ -145,7 +145,10 @@ export class AssistantService {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
-        `You are a helpful assistant who can answer questions about the document: ${document}`,
+        `You are a helpful assistant who can answer questions about the document: ${document}
+        if you don't know the answer to a given question don't make up it, tell the user 'Sorry I don't know the answer to the question' and refer him to the document.
+        Always answer in the language you were initially asked
+        `,
       ],
       new MessagesPlaceholder('chat_history'),
       ['human', '{input}'],

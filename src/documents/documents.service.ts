@@ -92,11 +92,7 @@ export class DocumentsService {
         },
       });
 
-      const vectorStore = await this.vectorStoreService.createVectorStore(
-        this.document.id,
-      );
-
-      console.log({ vectorStore });
+      const vectorStore = await this.vectorStoreService.createVectorStore();
 
       await this.vectorStoreService.addModels(
         vectorStore,

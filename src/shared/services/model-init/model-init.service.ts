@@ -19,21 +19,7 @@ export class ModelInitService {
     return this.model;
   }
 
-  async initEmbedding(openAIApiKey: string) {
-    this.embeddings = new OpenAIEmbeddings({
-      modelName: 'text-embedding-3-small',
-      openAIApiKey: openAIApiKey || process.env.OPENAI_API_KEY,
-    });
-
-    console.log('Embeddings initialized');
-    return this.embeddings;
-  }
-
   getModel() {
     return this.model;
-  }
-
-  getEmbeddings() {
-    return this.embeddings;
   }
 }

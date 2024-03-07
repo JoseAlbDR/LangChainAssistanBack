@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaVectorStore } from '@langchain/community/vectorstores/prisma';
+import {
+  PrismaSqlFilter,
+  PrismaVectorStore,
+} from '@langchain/community/vectorstores/prisma';
 import { Embedding, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Document } from 'langchain/document';
-import { ModelInitService } from '../model-init/model-init.service';
+import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
+import { OpenAIEmbeddings } from '@langchain/openai';
 
 // Define the return type of the method
 type VectorStoreType = PrismaVectorStore<
@@ -18,40 +22,41 @@ type VectorStoreType = PrismaVectorStore<
     id: typeof PrismaVectorStore.IdColumn;
     content: typeof PrismaVectorStore.ContentColumn;
   },
-  {
-    documentId: {
-      equals: string;
-    };
-  }
+  PrismaSqlFilter<any>
 >;
 
 @Injectable()
 export class VectorStoreService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly embeddingInitService: ModelInitService,
+    private readonly openAIConfigService: OpenaiConfigService,
   ) {}
 
-  async createVectorStore(id: string): Promise<VectorStoreType> {
-    const embeddings = this.embeddingInitService.getEmbeddings();
+  async createVectorStore(id?: string): Promise<VectorStoreType> {
+    const config = await this.openAIConfigService.getConfig();
 
-    return PrismaVectorStore.withModel<Embedding>(this.prismaService).create(
-      embeddings,
-      {
-        prisma: Prisma,
-        tableName: 'Embedding',
-        vectorColumnName: 'vector',
-        columns: {
-          id: PrismaVectorStore.IdColumn,
-          content: PrismaVectorStore.ContentColumn,
-        },
-        filter: {
+    const filter = id
+      ? {
           documentId: {
             equals: id,
           },
-        },
+        }
+      : {};
+
+    const vectorStore = PrismaVectorStore.withModel<Embedding>(
+      this.prismaService,
+    ).create(new OpenAIEmbeddings({ openAIApiKey: config.openAIApiKey }), {
+      prisma: Prisma,
+      tableName: 'Embedding',
+      vectorColumnName: 'vector',
+      columns: {
+        id: PrismaVectorStore.IdColumn,
+        content: PrismaVectorStore.ContentColumn,
       },
-    );
+      filter,
+    });
+
+    return vectorStore;
   }
 
   async addModels(
@@ -59,6 +64,8 @@ export class VectorStoreService {
     documents: Document[],
     id: string,
   ) {
+    console.log('addmodels');
+
     await vectorStore.addModels(
       await this.prismaService.$transaction(
         documents.map((chunk) =>

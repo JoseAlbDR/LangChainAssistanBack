@@ -30,7 +30,6 @@ export class OpenaiConfigService {
       });
 
       await this.modelInitService.initModel(config);
-      await this.modelInitService.initEmbedding(config.openAIApiKey);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
@@ -69,6 +68,5 @@ export class OpenaiConfigService {
     });
 
     await this.modelInitService.initModel(updatedConfig);
-    await this.modelInitService.initEmbedding(updatedConfig.openAIApiKey);
   }
 }
