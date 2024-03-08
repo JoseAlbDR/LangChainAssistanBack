@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ChatOpenAI } from '@langchain/openai';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 // import { ConversationChain } from 'langchain/chains';
@@ -40,10 +44,24 @@ export class ChatgptService {
     return memory;
   }
 
+  public async deleteMemory() {
+    try {
+      const memory = await this.createMemory();
+      await memory.chatHistory.clear();
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException(
+        'Error clearing memory, check server logs',
+      );
+    }
+  }
+
   private createPrompt() {
     // Chatbot prompt with instructions
     const prompt = ChatPromptTemplate.fromTemplate(`
       You are an AI assistant called Max. You are here to help answer questions and provide information to the best of your ability.
+      Always answer in the language you were initially asked.
+      If possible, answer in markdown format.
       Chat History: {history}
       {input}
     `);
@@ -102,6 +120,11 @@ export class ChatgptService {
     // const model = await this.modelInitService.initModel(config);
 
     const model = this.modelInitService.getModel();
+
+    if (!model)
+      throw new BadRequestException(
+        'Error creando el modelo, ¿Es tu API Key válida?',
+      );
 
     const memory = await this.createMemory();
 

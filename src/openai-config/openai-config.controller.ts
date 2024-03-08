@@ -26,5 +26,7 @@ export class OpenaiConfigController {
   async updateConfig(@Body() config: UpdateOpenaiConfigDto) {
     if (!config) return 'Nothing to update';
     await this.openaiConfigService.updateConfig(config);
+
+    return 'Config updated successfully';
   }
 }

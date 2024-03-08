@@ -72,8 +72,8 @@ export class AssistantController {
 
   @Get('chat-history/:document')
   async getChatHistory(@Param('document') document: string) {
-    const memory = this.assistantService.getChatHistory(document);
+    const memory = await this.assistantService.getChatHistory(document);
 
-    return memory;
+    return memory || [];
   }
 }

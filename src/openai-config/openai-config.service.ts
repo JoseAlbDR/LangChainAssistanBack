@@ -68,5 +68,7 @@ export class OpenaiConfigService {
     });
 
     await this.modelInitService.initModel(updatedConfig);
+
+    return updatedConfig;
   }
 }

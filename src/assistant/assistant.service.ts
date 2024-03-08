@@ -21,7 +21,6 @@ import { createRetrieverTool } from 'langchain/tools/retriever';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
 import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
 import { ChatOpenAI } from '@langchain/openai';
-import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 
 @Injectable()
 export class AssistantService {
@@ -33,7 +32,6 @@ export class AssistantService {
     private readonly vectorStoreService: VectorStoreService,
     private readonly memoryService: MemoryService,
     private readonly modelInitService: ModelInitService,
-    private readonly openAIConfigService: OpenaiConfigService,
     // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {}
 
@@ -135,7 +133,7 @@ export class AssistantService {
       outputKey: 'output',
       chatHistory: new MongoDBChatMessageHistory({
         collection,
-        sessionId: id,
+        sessionId: document,
       }),
     });
     return { memory, id };
@@ -147,7 +145,8 @@ export class AssistantService {
         'system',
         `You are a helpful assistant who can answer questions about the document: ${document}
         if you don't know the answer to a given question don't make up it, tell the user 'Sorry I don't know the answer to the question' and refer him to the document.
-        Always answer in the language you were initially asked
+        Always answer in the language you were initially asked.
+        If possible, answer in markdown format.
         `,
       ],
       new MessagesPlaceholder('chat_history'),
@@ -194,6 +193,11 @@ export class AssistantService {
 
   async getAssistantAnswer(document: string, question: string) {
     const model = this.modelInitService.getModel();
+
+    if (!model)
+      throw new BadRequestException(
+        'Error creando el modelo, ¿Es tu API Key válida?',
+      );
 
     const { memory, id } = await this.createMemory(document);
 
