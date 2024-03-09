@@ -74,13 +74,13 @@ export class ChatgptController {
 
     const memory = await this.chatgptService.getChatHistory('chatgptbot');
 
-    return memory || [];
+    return memory || { history: { messages: null } };
   }
 
   @Delete('chat-history')
   async deleteChatHistory() {
     await this.chatgptService.deleteMemory();
 
-    return 'Historial de chat borrado.';
+    return { message: 'Historial de chat borrado.' };
   }
 }

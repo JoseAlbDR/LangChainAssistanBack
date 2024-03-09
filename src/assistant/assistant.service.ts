@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import {
   // RunnablePassthrough,
   RunnableSequence,
@@ -139,12 +143,23 @@ export class AssistantService {
     return { memory, id };
   }
 
+  public async deleteMemory(document: string) {
+    try {
+      const { memory } = await this.createMemory(document);
+      await memory.chatHistory.clear();
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error clearing memory, chek server logs',
+      );
+    }
+  }
+
   private createPrompt(document: string) {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         'system',
         `You are a helpful assistant who can answer questions about the document: ${document}
-        if you don't know the answer to a given question don't make up it, tell the user 'Sorry I don't know the answer to the question' and refer him to the document.
+        If you don't know the answer to a given question don't make up it.
         Always answer in the language you were initially asked.
         If possible, answer in markdown format.
         `,

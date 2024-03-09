@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Param,
@@ -75,5 +76,12 @@ export class AssistantController {
     const memory = await this.assistantService.getChatHistory(document);
 
     return memory || [];
+  }
+
+  @Delete('chat-history/:document')
+  async deleteChatHistory(@Param('document') document: string) {
+    await this.assistantService.deleteMemory(document);
+
+    return { message: `Historial del chat ${document} borrado.` };
   }
 }
