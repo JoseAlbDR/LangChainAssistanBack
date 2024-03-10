@@ -32,48 +32,43 @@ export class DocumentsService {
     return filePath;
   }
 
-  private async loadTextDocument(
-    filePath: string,
-    splitter: RecursiveCharacterTextSplitter,
-  ) {
+  private async loadTextDocument(filePath: string) {
     const text = fs.readFileSync(filePath, 'utf-8');
 
-    const output = await splitter.createDocuments([text]);
-
-    return output;
+    return text;
   }
 
-  private async loadPdfDocument(
-    file: string,
-    splitter: RecursiveCharacterTextSplitter,
-  ) {
+  private async loadPdfDocument(file: string) {
     const loader = new PDFLoader(file, {
       parsedItemSeparator: '',
     });
 
     const docs = await loader.load();
 
-    const output = await splitter.splitDocuments(docs);
-
-    return output;
+    return docs;
   }
 
   async create(document: Express.Multer.File) {
     try {
       const filePath = this.saveFile(document);
 
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 200,
-        chunkOverlap: 20,
-      });
-
-      let documents: Document[];
+      let documents;
 
       if (document.mimetype === 'application/pdf')
-        documents = await this.loadPdfDocument(filePath, splitter);
+        documents = await this.loadPdfDocument(filePath);
 
       if (document.mimetype === 'text/plain')
-        documents = await this.loadTextDocument(filePath, splitter);
+        documents = await this.loadTextDocument(filePath);
+
+      const chunkSize = documents.length / 3;
+      const chunkOverlap = chunkSize * 0.1;
+
+      const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize,
+        chunkOverlap,
+      });
+
+      const output = await splitter.splitDocuments(documents);
 
       const exist = await this.prismaService.document.findUnique({
         where: {
@@ -96,7 +91,7 @@ export class DocumentsService {
 
       await this.vectorStoreService.addModels(
         vectorStore,
-        documents,
+        output,
         this.document.id,
       );
     } catch (err) {

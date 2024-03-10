@@ -65,19 +65,23 @@ export class VectorStoreService {
     id: string,
   ) {
     console.log('addmodels');
+    console.log(documents.length);
 
     await vectorStore.addModels(
       await this.prismaService.$transaction(
-        documents.map((chunk) =>
-          this.prismaService.embedding.create({
+        documents.map((chunk) => {
+          // console.log(`Chunk: ${index}`);
+          return this.prismaService.embedding.create({
             data: {
               content: chunk.pageContent,
               metadata: chunk.metadata,
               documentId: id,
             },
-          }),
-        ),
+          });
+        }),
       ),
     );
+
+    console.log('addmodels finished');
   }
 }
