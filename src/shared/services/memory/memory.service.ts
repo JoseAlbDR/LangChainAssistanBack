@@ -6,6 +6,8 @@ import {
 import { Collection, MongoClient } from 'mongodb';
 import 'dotenv/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { BufferMemory } from 'langchain/memory';
+import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 
 @Injectable()
 export class MemoryService {
@@ -42,5 +44,44 @@ export class MemoryService {
 
     const memory = await collection.findOne({ sessionId: document });
     return memory;
+  }
+
+  async createMemory(document: string) {
+    console.log({ document });
+    const foundDoc = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+    });
+
+    if (!foundDoc)
+      throw new NotFoundException(`Documento ${document} no encontrado`);
+
+    const collection = await this.getCollection();
+
+    const memory = new BufferMemory({
+      returnMessages: true,
+      memoryKey: 'chat_history',
+      inputKey: 'input',
+      outputKey: 'output',
+      chatHistory: new MongoDBChatMessageHistory({
+        collection,
+        sessionId: document,
+      }),
+    });
+
+    return { memory, id: foundDoc.id };
+  }
+
+  async removeHistory(document: string) {
+    try {
+      const { memory } = await this.createMemory(document);
+      await memory.chatHistory.clear();
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException(
+        'Error borrando historial de chat',
+      );
+    }
   }
 }

@@ -19,7 +19,6 @@ import { DocumentsService } from 'src/documents/documents.service';
 // import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { BufferMemory } from 'langchain/memory';
-import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { createOpenAIFunctionsAgent, AgentExecutor } from 'langchain/agents';
 import { createRetrieverTool } from 'langchain/tools/retriever';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
@@ -125,28 +124,9 @@ export class AssistantService {
   //     .join('\n');
   // }
 
-  private async createMemory(document: string) {
-    const { id } = await this.documentsService.findOne(document);
-
-    const collection = await this.memoryService.getCollection();
-
-    const memory = new BufferMemory({
-      returnMessages: true,
-      memoryKey: 'chat_history',
-      inputKey: 'input',
-      outputKey: 'output',
-      chatHistory: new MongoDBChatMessageHistory({
-        collection,
-        sessionId: document,
-      }),
-    });
-    return { memory, id };
-  }
-
   public async deleteMemory(document: string) {
     try {
-      const { memory } = await this.createMemory(document);
-      await memory.chatHistory.clear();
+      await this.memoryService.removeHistory(document);
     } catch (error) {
       throw new InternalServerErrorException(
         'Error clearing memory, chek server logs',
@@ -214,7 +194,7 @@ export class AssistantService {
         'Error creando el modelo, ¿Es tu API Key válida?',
       );
 
-    const { memory, id } = await this.createMemory(document);
+    const { memory, id } = await this.memoryService.createMemory(document);
 
     const prompt = this.createPrompt(document);
 

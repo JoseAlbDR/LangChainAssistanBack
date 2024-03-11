@@ -7,6 +7,7 @@ import {
   UploadedFile,
   ParseFilePipe,
   FileTypeValidator,
+  Delete,
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -43,8 +44,8 @@ export class DocumentsController {
   //   return this.documentsService.update(+id, updateDocumentDto);
   // }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.documentsService.remove(+id);
-  // }
+  @Delete(':name')
+  remove(@Param('name') name: string) {
+    return this.documentsService.remove(name);
+  }
 }

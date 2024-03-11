@@ -10,6 +10,7 @@ import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { Document } from 'langchain/document';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
+import { MemoryService } from 'src/shared/services/memory/memory.service';
 
 @Injectable()
 export class DocumentsService {
@@ -18,6 +19,7 @@ export class DocumentsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly vectorStoreService: VectorStoreService,
+    private readonly memoryService: MemoryService,
   ) {}
 
   public combineDocuments(docs: Document[]) {
@@ -32,49 +34,59 @@ export class DocumentsService {
     return filePath;
   }
 
-  private async loadTextDocument(filePath: string) {
+  private async loadTextDocument(
+    filePath: string,
+    splitter: RecursiveCharacterTextSplitter,
+  ) {
     const text = fs.readFileSync(filePath, 'utf-8');
 
-    return text;
+    const output = await splitter.createDocuments([text]);
+
+    return output;
   }
 
-  private async loadPdfDocument(file: string) {
+  private async loadPdfDocument(
+    file: string,
+    splitter: RecursiveCharacterTextSplitter,
+  ) {
     const loader = new PDFLoader(file, {
       parsedItemSeparator: '',
     });
 
     const docs = await loader.load();
 
-    return docs;
+    const output = await splitter.splitDocuments(docs);
+
+    return output;
   }
 
   async create(document: Express.Multer.File) {
     try {
       const filePath = this.saveFile(document);
 
-      let documents;
-
-      if (document.mimetype === 'application/pdf')
-        documents = await this.loadPdfDocument(filePath);
-
-      if (document.mimetype === 'text/plain')
-        documents = await this.loadTextDocument(filePath);
-
-      const chunkSize = documents.length / 3;
-      const chunkOverlap = chunkSize * 0.1;
-
       const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize,
-        chunkOverlap,
+        separators: ['\n'],
+        chunkSize: 256,
+        chunkOverlap: 26,
       });
 
-      const output = await splitter.splitDocuments(documents);
+      console.log(document.mimetype);
+
+      let documents: Document[];
+
+      if (document.mimetype === 'application/pdf')
+        documents = await this.loadPdfDocument(filePath, splitter);
+
+      if (document.mimetype === 'text/plain')
+        documents = await this.loadTextDocument(filePath, splitter);
 
       const exist = await this.prismaService.document.findUnique({
         where: {
           name: document.originalname,
         },
       });
+
+      console.log({ documents });
 
       if (exist)
         throw new BadRequestException(
@@ -91,7 +103,7 @@ export class DocumentsService {
 
       await this.vectorStoreService.addModels(
         vectorStore,
-        output,
+        documents,
         this.document.id,
       );
     } catch (err) {
@@ -132,7 +144,33 @@ export class DocumentsService {
   //   return `This action updates a #${id} document`;
   // }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} document`;
-  // }
+  async remove(name: string) {
+    try {
+      const document = await this.prismaService.document.findUnique({
+        where: {
+          name,
+        },
+      });
+
+      if (!document)
+        throw new NotFoundException(`Documento ${name} no encontrado`);
+
+      await this.memoryService.removeHistory(name);
+      await this.prismaService.$transaction([
+        this.prismaService.embedding.deleteMany({
+          where: {
+            documentId: document.id,
+          },
+        }),
+        this.prismaService.document.delete({
+          where: {
+            name,
+          },
+        }),
+      ]);
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 }

@@ -45,16 +45,22 @@ export class VectorStoreService {
 
     const vectorStore = PrismaVectorStore.withModel<Embedding>(
       this.prismaService,
-    ).create(new OpenAIEmbeddings({ openAIApiKey: config.openAIApiKey }), {
-      prisma: Prisma,
-      tableName: 'Embedding',
-      vectorColumnName: 'vector',
-      columns: {
-        id: PrismaVectorStore.IdColumn,
-        content: PrismaVectorStore.ContentColumn,
+    ).create(
+      new OpenAIEmbeddings({
+        openAIApiKey: config.openAIApiKey,
+        modelName: 'text-embedding-3-small',
+      }),
+      {
+        prisma: Prisma,
+        tableName: 'Embedding',
+        vectorColumnName: 'vector',
+        columns: {
+          id: PrismaVectorStore.IdColumn,
+          content: PrismaVectorStore.ContentColumn,
+        },
+        filter,
       },
-      filter,
-    });
+    );
 
     return vectorStore;
   }

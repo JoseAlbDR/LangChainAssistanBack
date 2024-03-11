@@ -9,6 +9,7 @@ import { OpenaiConfigModule } from './openai-config/openai-config.module';
 import { ModelInitService } from './shared/services/model-init/model-init.service';
 import { OpenaiConfigService } from './openai-config/openai-config.service';
 import { SharedModule } from './shared/services/shared.module';
+import { AssistantService } from './assistant/assistant.service';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SharedModule } from './shared/services/shared.module';
     MemoryService,
     ModelInitService,
     OpenaiConfigService,
+    AssistantService,
   ],
 })
 export class AppModule {}
