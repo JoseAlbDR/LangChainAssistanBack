@@ -30,6 +30,7 @@
 
 ```bash
 git clone https://github.com/JoseAlbDR/LangChainAssistanBack.git
+cd LangChainAssistanBack
 ```
 
 ### Copy .env.template in a .env file or rename it, fill empty variables with own data
