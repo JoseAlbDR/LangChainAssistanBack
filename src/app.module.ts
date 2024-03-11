@@ -10,6 +10,8 @@ import { ModelInitService } from './shared/services/model-init/model-init.servic
 import { OpenaiConfigService } from './openai-config/openai-config.service';
 import { SharedModule } from './shared/services/shared.module';
 import { AssistantService } from './assistant/assistant.service';
+import { APP_FILTER } from '@nestjs/core';
+import { GlobalExceptionFilter } from './errors/exception-filter';
 
 @Module({
   imports: [
@@ -27,6 +29,10 @@ import { AssistantService } from './assistant/assistant.service';
     ModelInitService,
     OpenaiConfigService,
     AssistantService,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
