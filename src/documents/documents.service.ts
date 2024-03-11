@@ -35,10 +35,10 @@ export class DocumentsService {
   }
 
   private async loadTextDocument(
-    filePath: string,
+    content: Buffer,
     splitter: RecursiveCharacterTextSplitter,
   ) {
-    const text = fs.readFileSync(filePath, 'utf-8');
+    const text = content.toString('utf-8');
 
     const output = await splitter.createDocuments([text]);
 
@@ -46,10 +46,12 @@ export class DocumentsService {
   }
 
   private async loadPdfDocument(
-    file: string,
+    content: Buffer,
     splitter: RecursiveCharacterTextSplitter,
   ) {
-    const loader = new PDFLoader(file, {
+    const blob = new Blob([content], { type: 'application/pdf' });
+
+    const loader = new PDFLoader(blob, {
       parsedItemSeparator: '',
     });
 
@@ -60,38 +62,33 @@ export class DocumentsService {
     return output;
   }
 
-  async create(document: Express.Multer.File) {
-    try {
-      const filePath = this.saveFile(document);
+  private checkIfDocumentExist = async (document: string) => {
+    const exist = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+    });
 
+    if (exist)
+      throw new BadRequestException(`Document ${document} already exists`);
+  };
+
+  async create(document: Express.Multer.File) {
+    await this.checkIfDocumentExist(document.originalname);
+    try {
       const splitter = new RecursiveCharacterTextSplitter({
         separators: ['\n'],
         chunkSize: 256,
         chunkOverlap: 26,
       });
 
-      console.log(document.mimetype);
-
       let documents: Document[];
 
       if (document.mimetype === 'application/pdf')
-        documents = await this.loadPdfDocument(filePath, splitter);
+        documents = await this.loadPdfDocument(document.buffer, splitter);
 
       if (document.mimetype === 'text/plain')
-        documents = await this.loadTextDocument(filePath, splitter);
-
-      const exist = await this.prismaService.document.findUnique({
-        where: {
-          name: document.originalname,
-        },
-      });
-
-      console.log({ documents });
-
-      if (exist)
-        throw new BadRequestException(
-          `Document ${document.originalname} already exists`,
-        );
+        documents = await this.loadTextDocument(document.buffer, splitter);
 
       this.document = await this.prismaService.document.create({
         data: {
