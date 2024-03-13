@@ -19,7 +19,7 @@ export class OpenaiConfigController {
   async getConfig() {
     const config = await this.openaiConfigService.getConfig();
 
-    return config;
+    return { config };
   }
 
   @Put('')
