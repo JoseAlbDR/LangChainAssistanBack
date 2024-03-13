@@ -7,14 +7,14 @@ Backend for my ChatBot and Document Assistant Project
 ## Installation
 
 ```bash
-git clone https://github.com/JoseAlbDR/LangChainAssistanBack.git
-cd LangChainAssistanBack
+$ git clone https://github.com/JoseAlbDR/LangChainAssistanBack.git
+$ cd LangChainAssistanBack
 ```
 
 ### Start MongoDB and Postgres containers
 
 ```bash
-docker compose up -d
+$ docker compose up -d
 ```
 
 ### Copy .env.template in a .env file or rename it, fill empty variables with own data
@@ -37,8 +37,16 @@ LANGCHAIN_PROJECT=
 MONGO_DB_URL=mongodb://127.0.0.1:27017/chatbot?directConnection=true
 ```
 
+### Install dependencies
+
 ```bash
 $ npm install
+```
+
+### Sync Prisma schema with postgres database
+
+```bash
+$ npx prisma migrate deploy
 ```
 
 ## Running the app
