@@ -11,6 +11,7 @@ import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { Document } from 'langchain/document';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
+import { DocumentOptionsDto } from './dtos/document-options.dto';
 
 @Injectable()
 export class DocumentsService {
@@ -73,13 +74,18 @@ export class DocumentsService {
       throw new BadRequestException(`Document ${document} already exists`);
   };
 
-  async create(document: Express.Multer.File) {
+  async create(
+    document: Express.Multer.File,
+    documentOptions: DocumentOptionsDto,
+  ) {
+    const { chunkSize, chunkOverlap } = documentOptions;
+
     await this.checkIfDocumentExist(document.originalname);
     try {
       const splitter = new RecursiveCharacterTextSplitter({
         separators: ['\n'],
-        chunkSize: 256,
-        chunkOverlap: 26,
+        chunkSize,
+        chunkOverlap,
       });
 
       let documents: Document[];

@@ -8,9 +8,11 @@ import {
   ParseFilePipe,
   FileTypeValidator,
   Delete,
+  Body,
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DocumentOptionsDto } from './dtos/document-options.dto';
 
 @Controller('document')
 export class DocumentsController {
@@ -25,8 +27,9 @@ export class DocumentsController {
       }),
     )
     document: Express.Multer.File,
+    @Body() documentOptions: DocumentOptionsDto,
   ) {
-    return await this.documentsService.create(document);
+    return await this.documentsService.create(document, documentOptions);
   }
 
   @Get()
