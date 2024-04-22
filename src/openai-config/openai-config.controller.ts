@@ -19,7 +19,11 @@ export class OpenaiConfigController {
   async getConfig() {
     const config = await this.openaiConfigService.getConfig();
 
-    return { config };
+    const isKeyPresent = config?.openAIApiKey ? true : false;
+
+    delete config?.openAIApiKey;
+
+    return { config, isKeyPresent };
   }
 
   @Put('')
