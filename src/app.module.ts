@@ -12,6 +12,7 @@ import { SharedModule } from './shared/services/shared.module';
 import { AssistantService } from './assistant/assistant.service';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './errors/exception-filter';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { GlobalExceptionFilter } from './errors/exception-filter';
     DocumentsModule,
     OpenaiConfigModule,
     SharedModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [

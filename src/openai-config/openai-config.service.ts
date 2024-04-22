@@ -14,7 +14,7 @@ export class OpenaiConfigService {
 
   async saveConfig(createOpenaiConfigDto: CreateOpenaiConfigDto) {
     try {
-      const config = await this.prismaService.chatConfig.create({
+      const config = await this.prismaService.config.create({
         data: {
           id: 'chatgptconfig',
           openAIApiKey:
@@ -40,7 +40,7 @@ export class OpenaiConfigService {
 
   async getConfig() {
     try {
-      const config = await this.prismaService.chatConfig.findUnique({
+      const config = await this.prismaService.config.findUnique({
         where: {
           id: 'chatgptconfig',
         },
@@ -56,7 +56,7 @@ export class OpenaiConfigService {
   }
 
   async updateConfig(config: UpdateOpenaiConfigDto) {
-    const updatedConfig = await this.prismaService.chatConfig.update({
+    const updatedConfig = await this.prismaService.config.update({
       where: { id: 'chatgptconfig' },
       data: config,
       select: {

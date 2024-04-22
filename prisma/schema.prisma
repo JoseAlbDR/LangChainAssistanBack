@@ -7,18 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model ChatConfig {
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  email     String     @unique
+  password  String
+  isActive  Boolean
+  roles     String[]   @default(["user"])
+  config    Config?
+  documents Document[]
+}
+
+model Config {
   modelName    String @default("gpt-3.5-turbo-0125")
   openAIApiKey String @default("")
   temperature  Float  @default(0.7)
   maxTokens    Int    @default(250)
   id           String @id
+  User         User   @relation(fields: [id], references: [id], onDelete: Cascade)
 }
 
 model Document {
   id         String      @id @default(uuid())
   name       String      @unique
   embeddings Embedding[]
+  User       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String?
 }
 
 model Embedding {
@@ -27,5 +41,5 @@ model Embedding {
   vector     Unsupported("vector")?
   documentId String?
   metadata   Json                   @map("metadata")
-  Document   Document?              @relation(fields: [documentId], references: [id])
+  Document   Document?              @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
