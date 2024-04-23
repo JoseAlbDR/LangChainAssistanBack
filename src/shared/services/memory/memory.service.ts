@@ -8,6 +8,8 @@ import 'dotenv/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { BufferMemory } from 'langchain/memory';
 import { MongoDBChatMessageHistory } from '@langchain/mongodb';
+import { CheckPermissions } from 'src/utils/check-permissions.util';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class MemoryService {
@@ -28,8 +30,8 @@ export class MemoryService {
     return await this.connectToCollection();
   }
 
-  async getHistory(document: string) {
-    if (document !== 'chatgptbot') {
+  async getHistory(document: string, user: User) {
+    if (document !== `${user.username}-chatgptbot`) {
       const exist = await this.prismaService.document.findUnique({
         where: {
           name: document,
@@ -38,16 +40,18 @@ export class MemoryService {
 
       if (!exist)
         throw new NotFoundException(`Documento ${document} no encontrado`);
+      CheckPermissions.check(user, exist.createdBy);
     }
 
     const collection = await this.connectToCollection();
 
-    const memory = await collection.findOne({ sessionId: document });
+    const memory = await collection.findOne({
+      sessionId: `${user.username}-${document}`,
+    });
     return memory;
   }
 
-  async createMemory(document: string) {
-    console.log({ document });
+  async createMemory(document: string, user: User) {
     const foundDoc = await this.prismaService.document.findUnique({
       where: {
         name: document,
@@ -56,6 +60,8 @@ export class MemoryService {
 
     if (!foundDoc)
       throw new NotFoundException(`Documento ${document} no encontrado`);
+
+    CheckPermissions.check(user, foundDoc.createdBy);
 
     const collection = await this.getCollection();
 
@@ -66,16 +72,16 @@ export class MemoryService {
       outputKey: 'output',
       chatHistory: new MongoDBChatMessageHistory({
         collection,
-        sessionId: document,
+        sessionId: `${user.username}-${document}`,
       }),
     });
 
     return { memory, id: foundDoc.id };
   }
 
-  async removeHistory(document: string) {
+  async removeHistory(document: string, user: User) {
     try {
-      const { memory } = await this.createMemory(document);
+      const { memory } = await this.createMemory(document, user);
       await memory.chatHistory.clear();
     } catch (error) {
       console.log(error);

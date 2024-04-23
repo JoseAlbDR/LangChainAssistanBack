@@ -11,7 +11,7 @@ import {
 } from '@langchain/core/prompts';
 // import { OpenAIConfig } from 'src/shared/interfaces/openai.interface';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
-import { DocumentsService } from 'src/documents/documents.service';
+// import { DocumentsService } from 'src/documents/documents.service';
 // import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
 // import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { BufferMemory } from 'langchain/memory';
@@ -20,6 +20,7 @@ import { createRetrieverTool } from 'langchain/tools/retriever';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
 import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
 import { ChatOpenAI } from '@langchain/openai';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AssistantService {
@@ -27,7 +28,6 @@ export class AssistantService {
   // private readonly stringParser = new StringOutputParser();
 
   constructor(
-    private readonly documentsService: DocumentsService,
     private readonly vectorStoreService: VectorStoreService,
     private readonly memoryService: MemoryService,
     private readonly modelInitService: ModelInitService,
@@ -120,9 +120,9 @@ export class AssistantService {
   //     .join('\n');
   // }
 
-  public async deleteMemory(document: string) {
+  public async deleteMemory(document: string, user: User) {
     try {
-      await this.memoryService.removeHistory(document);
+      await this.memoryService.removeHistory(document, user);
     } catch (error) {
       throw new InternalServerErrorException(
         'Error clearing memory, chek server logs',
@@ -183,15 +183,18 @@ export class AssistantService {
     return agentExecutor;
   }
 
-  async getAssistantAnswer(document: string, question: string, userId: string) {
-    const model = this.modelInitService.getModel(userId);
+  async getAssistantAnswer(document: string, question: string, user: User) {
+    const model = this.modelInitService.getModel(user.id);
 
     if (!model)
       throw new BadRequestException(
         'Error creando el modelo, ¿Es tu API Key válida?',
       );
 
-    const { memory, id } = await this.memoryService.createMemory(document);
+    const { memory, id } = await this.memoryService.createMemory(
+      document,
+      user,
+    );
 
     const prompt = this.createPrompt(document);
 
@@ -217,8 +220,8 @@ export class AssistantService {
     return response.output;
   }
 
-  async getChatHistory(document: string) {
-    const memory = await this.memoryService.getHistory(document);
+  async getChatHistory(document: string, user: User) {
+    const memory = await this.memoryService.getHistory(document, user);
     return memory;
   }
 }

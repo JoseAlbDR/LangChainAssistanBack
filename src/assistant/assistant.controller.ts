@@ -18,6 +18,7 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 
 @Controller('assistant')
+@Auth()
 export class AssistantController {
   constructor(private readonly assistantService: AssistantService) {}
 
@@ -58,11 +59,10 @@ export class AssistantController {
     res.end();
   }
 
-  @Auth()
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: AssistantQuestionDto,
-    @GetUser('id') user: User,
+    @GetUser() user: User,
     @Res() res: Response,
   ) {
     const { question, document } = userQuestionDto;
@@ -70,22 +70,28 @@ export class AssistantController {
     const response = await this.assistantService.getAssistantAnswer(
       document,
       question,
-      user.id,
+      user,
     );
 
     return this.returnStream(res, response);
   }
 
   @Get('chat-history/:document')
-  async getChatHistory(@Param('document') document: string) {
-    const memory = await this.assistantService.getChatHistory(document);
+  async getChatHistory(
+    @Param('document') document: string,
+    @GetUser() user: User,
+  ) {
+    const memory = await this.assistantService.getChatHistory(document, user);
 
     return memory || [];
   }
 
   @Delete('chat-history/:document')
-  async deleteChatHistory(@Param('document') document: string) {
-    await this.assistantService.deleteMemory(document);
+  async deleteChatHistory(
+    @Param('document') document: string,
+    @GetUser() user: User,
+  ) {
+    await this.assistantService.deleteMemory(document, user);
 
     return { message: `Historial del chat ${document} borrado.` };
   }

@@ -83,6 +83,8 @@ export class AuthService {
   }
 
   checkAuthStatus(user: User) {
+    delete user.roles;
+
     return {
       ...user,
       token: this.getJwtToken({
