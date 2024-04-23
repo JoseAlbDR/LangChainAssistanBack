@@ -137,16 +137,17 @@ export class DocumentsService {
     return documents;
   }
 
-  async findOne(document: string, userId: string) {
+  async findOne(document: string, user: User) {
     const foundDocument = await this.prismaService.document.findUnique({
       where: {
-        userId,
         name: document,
       },
     });
 
     if (!foundDocument)
-      throw new NotFoundException(`Document ${document} not found`);
+      throw new NotFoundException(`Documento ${document} no encontrado`);
+
+    CheckPermissions.check(user, foundDocument.userId);
 
     return foundDocument;
   }

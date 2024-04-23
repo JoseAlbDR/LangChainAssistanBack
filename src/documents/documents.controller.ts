@@ -17,10 +17,10 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 
 @Controller('document')
+@Auth()
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
-  @Auth()
   @Post()
   @UseInterceptors(FileInterceptor('document'))
   async feedDocument(
@@ -40,16 +40,14 @@ export class DocumentsController {
     );
   }
 
-  @Auth()
   @Get()
   findAll(@GetUser('id') user: User) {
     return this.documentsService.findAll(user.id);
   }
 
-  @Auth()
   @Get(':name')
   findOne(@Param('name') name: string, @GetUser('id') user: User) {
-    return this.documentsService.findOne(name, user.id);
+    return this.documentsService.findOne(name, user);
   }
 
   // @Patch(':id')
@@ -57,7 +55,6 @@ export class DocumentsController {
   //   return this.documentsService.update(+id, updateDocumentDto);
   // }
 
-  @Auth()
   @Delete(':name')
   remove(@Param('name') name: string, @GetUser() user: User) {
     return this.documentsService.remove(name, user);
