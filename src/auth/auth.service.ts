@@ -3,10 +3,11 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
-import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -27,9 +28,13 @@ export class AuthService {
       );
 
     try {
+      const { password, ...data } = createUserDto;
+
       const user = await this.prismaService.user.create({
-        data: { ...createUserDto },
+        data: { ...data, password: bcrypt.hashSync(password, 10) },
       });
+
+      delete user.password;
 
       return user;
     } catch (error) {
