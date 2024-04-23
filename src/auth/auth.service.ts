@@ -1,18 +1,18 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+
 import * as bcrypt from 'bcrypt';
 
-import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
+import { LoginUserDto, CreateUserDto } from './dto';
 
 @Injectable()
 export class AuthService {
   constructor(private readonly prismaService: PrismaService) {}
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async register(createUserDto: CreateUserDto) {
     const { username, email } = createUserDto;
 
     const [emailExist, usernameExist] = await this.prismaService.$transaction([
@@ -27,19 +27,32 @@ export class AuthService {
         'El nombre de usuario está siendo utilizado',
       );
 
-    try {
-      const { password, ...data } = createUserDto;
+    const { password, ...data } = createUserDto;
 
-      const user = await this.prismaService.user.create({
-        data: { ...data, password: bcrypt.hashSync(password, 10) },
-      });
+    const user = await this.prismaService.user.create({
+      data: { ...data, password: bcrypt.hashSync(password, 10) },
+      select: { password: false, username: true, email: true, id: true },
+    });
 
-      delete user.password;
+    return user;
+  }
 
-      return user;
-    } catch (error) {
-      console.log(error);
-      throw new InternalServerErrorException('Revisar logs de servidor');
-    }
+  async login(loginUserDto: LoginUserDto) {
+    const { username, password } = loginUserDto;
+
+    const user = await this.prismaService.user.findUnique({
+      where: { username },
+      select: { username: true, password: true },
+    });
+
+    if (!user)
+      throw new UnauthorizedException(`Usuario o contraseña incorrectos`);
+
+    const validPassword = bcrypt.compareSync(password, user.password);
+
+    if (!validPassword)
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
+
+    return user;
   }
 }
