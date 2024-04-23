@@ -33,7 +33,7 @@ export class AuthController {
 
   @Auth()
   @Get()
-  checkAuthStatus(@GetUser('id') user: User) {
+  checkAuthStatus(@GetUser() user: User) {
     return this.authService.checkAuthStatus(user);
   }
 
