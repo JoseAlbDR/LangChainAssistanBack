@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
+import { User } from '@prisma/client';
+import { GetRawHeaders, GetUser } from './decorators';
 
 @Controller('auth')
 export class AuthController {
@@ -19,8 +21,11 @@ export class AuthController {
 
   @Get('private')
   @UseGuards(AuthGuard())
-  testPrivateRoute(@Req() request: Express.Request) {
-    console.log({ user: request.user });
-    return { ok: true, message: 'private test' };
+  testPrivateRoute(
+    @GetUser() user: User,
+    @GetUser('email') email: string,
+    @GetRawHeaders() rawHeaders: { [key: string]: string },
+  ) {
+    return { ok: true, message: 'private test', user, email, rawHeaders };
   }
 }
