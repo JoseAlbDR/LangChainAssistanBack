@@ -5,6 +5,7 @@ import { SharedModule } from 'src/shared/services/shared.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { envs } from 'src/config/envs.adapter';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -22,12 +23,14 @@ import { envs } from 'src/config/envs.adapter';
       },
     }),
 
+    // Sincrono
     // JwtModule.register({
     //   secret: process.env.JWT_SECRET,
     //   signOptions: { expiresIn: '2h' },
     // }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
+  exports: [JwtStrategy, PassportModule, JwtModule],
 })
 export class AuthModule {}
