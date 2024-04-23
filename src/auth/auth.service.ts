@@ -69,6 +69,8 @@ export class AuthService {
     if (!validPassword)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
+    delete user.password;
+
     return {
       ...user,
       token: this.getJwtToken({
