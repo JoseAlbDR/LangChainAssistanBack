@@ -31,17 +31,15 @@ export class MemoryService {
   }
 
   async getHistory(document: string, user: User) {
-    if (document !== `${user.username}-chatgptbot`) {
-      const exist = await this.prismaService.document.findUnique({
-        where: {
-          name: document,
-        },
-      });
+    const exist = await this.prismaService.document.findUnique({
+      where: {
+        name: document,
+      },
+    });
 
-      if (!exist)
-        throw new NotFoundException(`Documento ${document} no encontrado`);
-      CheckPermissions.check(user, exist.createdBy);
-    }
+    if (!exist)
+      throw new NotFoundException(`Documento ${document} no encontrado`);
+    CheckPermissions.check(user, exist.createdBy);
 
     const collection = await this.connectToCollection();
 

@@ -12,6 +12,7 @@ import { MongoDBChatMessageHistory } from '@langchain/mongodb';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class ChatgptService {
@@ -22,15 +23,15 @@ export class ChatgptService {
     // @Inject('OPENAI_CONFIG') private readonly openAIConfig: OpenAIConfig,
   ) {}
 
-  async getChatHistory(name: string) {
-    return await this.memoryService.getHistory(name);
+  async getChatHistory(name: string, user: User) {
+    return await this.memoryService.getHistory(name, user);
   }
 
-  private async createMemory() {
+  private async createMemory(user: User) {
     const collection = await this.memoryService.getCollection();
 
     // Session id for chatbot
-    const sessionId = 'chatgptbot';
+    const sessionId = `${user.username}-chatgptbot`;
 
     // Create buffer memory
     const memory = new BufferMemory({
@@ -44,9 +45,9 @@ export class ChatgptService {
     return memory;
   }
 
-  public async deleteMemory() {
+  public async deleteMemory(user: User) {
     try {
-      const memory = await this.createMemory();
+      const memory = await this.createMemory(user);
       await memory.chatHistory.clear();
     } catch (error) {
       console.log(error);
@@ -114,19 +115,19 @@ export class ChatgptService {
     );
   }
 
-  async getChatgptAnswer(question: string, userId: string) {
+  async getChatgptAnswer(question: string, user: User) {
     // const config = await this.openAiConfigService.getConfig();
 
     // const model = await this.modelInitService.initModel(config);
 
-    const model = this.modelInitService.getModel(userId);
+    const model = this.modelInitService.getModel(user.id);
 
     if (!model)
       throw new BadRequestException(
         'Error creando el modelo, ¿Es tu API Key válida?',
       );
 
-    const memory = await this.createMemory();
+    const memory = await this.createMemory(user);
 
     const prompt = this.createPrompt();
 

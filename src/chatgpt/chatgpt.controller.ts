@@ -17,6 +17,7 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 
 @Controller('chatgpt')
+@Auth()
 export class ChatgptController {
   constructor(private readonly chatgptService: ChatgptService) {}
 
@@ -58,35 +59,31 @@ export class ChatgptController {
     res.end();
   }
 
-  @Auth()
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: ChatGptQuestionDto,
-    @GetUser('id') user: User,
+    @GetUser() user: User,
     @Res() res: Response,
   ) {
     const { question } = userQuestionDto;
 
-    const stream = await this.chatgptService.getChatgptAnswer(
-      question,
-      user.id,
-    );
+    const stream = await this.chatgptService.getChatgptAnswer(question, user);
 
     return this.returnStream(res, stream);
   }
 
   @Get('chat-history')
-  async getChatHistory() {
+  async getChatHistory(@GetUser() user: User) {
     console.log('Chat history');
 
-    const memory = await this.chatgptService.getChatHistory('chatgptbot');
+    const memory = await this.chatgptService.getChatHistory('chatgptbot', user);
 
     return memory || { history: { messages: null } };
   }
 
   @Delete('chat-history')
-  async deleteChatHistory() {
-    await this.chatgptService.deleteMemory();
+  async deleteChatHistory(@GetUser() user: User) {
+    await this.chatgptService.deleteMemory(user);
 
     return { message: 'Historial de chat borrado.' };
   }
