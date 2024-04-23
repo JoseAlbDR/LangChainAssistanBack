@@ -169,7 +169,7 @@ export class DocumentsService {
 
       CheckPermissions.check(user, document.createdBy);
 
-      await this.memoryService.removeHistory(name);
+      await this.memoryService.removeHistory(name, user);
       await this.prismaService.$transaction([
         this.prismaService.embedding.deleteMany({
           where: {

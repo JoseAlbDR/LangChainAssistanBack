@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import {
   ChatPromptTemplate,
@@ -121,13 +117,7 @@ export class AssistantService {
   // }
 
   public async deleteMemory(document: string, user: User) {
-    try {
-      await this.memoryService.removeHistory(document, user);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Error clearing memory, chek server logs',
-      );
-    }
+    await this.memoryService.removeHistory(document, user);
   }
 
   private createPrompt(document: string) {

@@ -78,14 +78,7 @@ export class MemoryService {
   }
 
   async removeHistory(document: string, user: User) {
-    try {
-      const { memory } = await this.createMemory(document, user);
-      await memory.chatHistory.clear();
-    } catch (error) {
-      console.log(error);
-      throw new InternalServerErrorException(
-        'Error borrando historial de chat',
-      );
-    }
+    const { memory } = await this.createMemory(document, user);
+    await memory.chatHistory.clear();
   }
 }
