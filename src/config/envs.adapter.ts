@@ -11,7 +11,7 @@ export const envs = {
   DB_NAME: get('DB_NAME').default('vector-db').asString(),
 
   //* OPENAI API KEY
-  OPENAI_API_KEY: get('OPENAI_API_KEY').asString(),
+  // OPENAI_API_KEY: get('OPENAI_API_KEY').asString(),
 
   //* DOCUMENT INFO
   DOCUMENT_PATH: get('DOCUMENT_PATH').default('./data/').asString(),
@@ -22,4 +22,7 @@ export const envs = {
 
   //* APP PORT
   PORT: get('PORT').default(3000).asPortNumber(),
+
+  //* JWT
+  JWT_SECRET: get('JWT_SECRET').asString(),
 };
