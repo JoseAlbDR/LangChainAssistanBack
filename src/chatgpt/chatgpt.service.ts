@@ -116,10 +116,6 @@ export class ChatgptService {
   }
 
   async getChatgptAnswer(question: string, user: User) {
-    // const config = await this.openAiConfigService.getConfig();
-
-    // const model = await this.modelInitService.initModel(config);
-
     const model = this.modelInitService.getModel(user.id);
 
     if (!model)
