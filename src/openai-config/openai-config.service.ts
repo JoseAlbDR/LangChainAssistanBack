@@ -12,11 +12,14 @@ export class OpenaiConfigService {
     private readonly modelInitService: ModelInitService,
   ) {}
 
-  async saveConfig(createOpenaiConfigDto: CreateOpenaiConfigDto) {
+  async saveConfig(
+    createOpenaiConfigDto: CreateOpenaiConfigDto,
+    userId: string,
+  ) {
     try {
       const config = await this.prismaService.config.create({
         data: {
-          id: 'chatgptconfig',
+          id: userId,
           openAIApiKey:
             createOpenaiConfigDto.openAIApiKey || process.env.OPENAI_API_KEY,
           ...createOpenaiConfigDto,
@@ -29,7 +32,7 @@ export class OpenaiConfigService {
         },
       });
 
-      await this.modelInitService.initModel(config);
+      await this.modelInitService.initModel(config, userId);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
@@ -38,11 +41,11 @@ export class OpenaiConfigService {
     }
   }
 
-  async getConfig() {
+  async getConfig(userId: string) {
     try {
       const config = await this.prismaService.config.findUnique({
         where: {
-          id: 'chatgptconfig',
+          id: userId,
         },
       });
 
@@ -55,9 +58,9 @@ export class OpenaiConfigService {
     }
   }
 
-  async updateConfig(config: UpdateOpenaiConfigDto) {
+  async updateConfig(config: UpdateOpenaiConfigDto, userId: string) {
     const updatedConfig = await this.prismaService.config.update({
-      where: { id: 'chatgptconfig' },
+      where: { id: userId },
       data: config,
       select: {
         maxTokens: true,
@@ -67,7 +70,7 @@ export class OpenaiConfigService {
       },
     });
 
-    await this.modelInitService.initModel(updatedConfig);
+    await this.modelInitService.initModel(updatedConfig, userId);
 
     return updatedConfig;
   }

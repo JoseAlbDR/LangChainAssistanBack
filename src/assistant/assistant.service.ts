@@ -3,11 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import {
-  // RunnablePassthrough,
-  RunnableSequence,
-} from '@langchain/core/runnables';
-// import { StringOutputParser } from '@langchain/core/output_parsers';
+
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,
@@ -17,7 +13,7 @@ import {
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 import { DocumentsService } from 'src/documents/documents.service';
 // import { createStuffDocumentsChain } from 'langchain/chains/combine_documents';
-import { createRetrievalChain } from 'langchain/chains/retrieval';
+// import { createRetrievalChain } from 'langchain/chains/retrieval';
 import { BufferMemory } from 'langchain/memory';
 import { createOpenAIFunctionsAgent, AgentExecutor } from 'langchain/agents';
 import { createRetrieverTool } from 'langchain/tools/retriever';
@@ -55,34 +51,34 @@ export class AssistantService {
   //   return standAloneQuestionChain;
   // }
 
-  private async generateRetrieverChain(
-    document: string,
-    answerChain: RunnableSequence,
-  ) {
-    const { id } = await this.documentsService.findOne(document);
+  // private async generateRetrieverChain(
+  //   document: string,
+  //   answerChain: RunnableSequence,
+  // ) {
+  //   const { id } = await this.documentsService.findOne(document);
 
-    if (!id)
-      throw new BadRequestException(
-        `Document ${document} does not exist, please first upload`,
-      );
+  //   if (!id)
+  //     throw new BadRequestException(
+  //       `Document ${document} does not exist, please first upload`,
+  //     );
 
-    const vectorStore = await this.vectorStoreService.createVectorStore(id);
+  //   const vectorStore = await this.vectorStoreService.createVectorStore(id);
 
-    const retriever = vectorStore.asRetriever();
+  //   const retriever = vectorStore.asRetriever();
 
-    // const retrieverChain = RunnableSequence.from([
-    //   (prevResult) => prevResult.standalone_question,
-    //   retriever,
-    //   this.documentsService.combineDocuments
-    // ]);
+  // const retrieverChain = RunnableSequence.from([
+  //   (prevResult) => prevResult.standalone_question,
+  //   retriever,
+  //   this.documentsService.combineDocuments
+  // ]);
 
-    const retrievalChain = await createRetrievalChain({
-      combineDocsChain: answerChain,
-      retriever,
-    });
+  //   const retrievalChain = await createRetrievalChain({
+  //     combineDocsChain: answerChain,
+  //     retriever,
+  //   });
 
-    return retrievalChain;
-  }
+  //   return retrievalChain;
+  // }
 
   // private async generateAnswerChain() {
   //   const answerTemplate = `You are a helpful and enthusiastic support bot that can answer a given question based on the provided context and conversation history.
@@ -187,8 +183,8 @@ export class AssistantService {
     return agentExecutor;
   }
 
-  async getAssistantAnswer(document: string, question: string) {
-    const model = this.modelInitService.getModel();
+  async getAssistantAnswer(document: string, question: string, userId: string) {
+    const model = this.modelInitService.getModel(userId);
 
     if (!model)
       throw new BadRequestException(

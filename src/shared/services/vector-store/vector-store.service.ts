@@ -32,8 +32,11 @@ export class VectorStoreService {
     private readonly openAIConfigService: OpenaiConfigService,
   ) {}
 
-  async createVectorStore(id?: string): Promise<VectorStoreType> {
-    const config = await this.openAIConfigService.getConfig();
+  async createVectorStore(
+    userId: string,
+    id?: string,
+  ): Promise<VectorStoreType> {
+    const config = await this.openAIConfigService.getConfig(userId);
 
     const filter = id
       ? {

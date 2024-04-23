@@ -14,6 +14,8 @@ import { Response } from 'express';
 import { AssistantQuestionDto } from './dtos/assistant-question.dto';
 import { ChainValues } from '@langchain/core/utils/types';
 import { Readable } from 'stream';
+import { Auth, GetUser } from 'src/auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('assistant')
 export class AssistantController {
@@ -56,9 +58,11 @@ export class AssistantController {
     res.end();
   }
 
+  @Auth()
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: AssistantQuestionDto,
+    @GetUser('id') user: User,
     @Res() res: Response,
   ) {
     const { question, document } = userQuestionDto;
@@ -66,6 +70,7 @@ export class AssistantController {
     const response = await this.assistantService.getAssistantAnswer(
       document,
       question,
+      user.id,
     );
 
     return this.returnStream(res, response);

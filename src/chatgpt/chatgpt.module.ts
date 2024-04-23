@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { ChatgptController } from './chatgpt.controller';
 import { SharedModule } from 'src/shared/services/shared.module';
 import { ChatgptService } from './chatgpt.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [SharedModule],
+  imports: [SharedModule, AuthModule],
   controllers: [ChatgptController],
   providers: [
     ChatgptService,

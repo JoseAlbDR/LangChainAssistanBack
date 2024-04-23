@@ -13,6 +13,8 @@ import { Response } from 'express';
 import { ChatGptQuestionDto } from './dtos/chatgpt-question.dto';
 import { ChainValues } from '@langchain/core/utils/types';
 import { Readable } from 'stream';
+import { Auth, GetUser } from 'src/auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('chatgpt')
 export class ChatgptController {
@@ -56,14 +58,19 @@ export class ChatgptController {
     res.end();
   }
 
+  @Auth()
   @Post('user-question')
   async userQuestion(
     @Body() userQuestionDto: ChatGptQuestionDto,
+    @GetUser('id') user: User,
     @Res() res: Response,
   ) {
     const { question } = userQuestionDto;
 
-    const stream = await this.chatgptService.getChatgptAnswer(question);
+    const stream = await this.chatgptService.getChatgptAnswer(
+      question,
+      user.id,
+    );
 
     return this.returnStream(res, stream);
   }

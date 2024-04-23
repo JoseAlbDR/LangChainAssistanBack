@@ -114,12 +114,12 @@ export class ChatgptService {
     );
   }
 
-  async getChatgptAnswer(question: string) {
+  async getChatgptAnswer(question: string, userId: string) {
     // const config = await this.openAiConfigService.getConfig();
 
     // const model = await this.modelInitService.initModel(config);
 
-    const model = this.modelInitService.getModel();
+    const model = this.modelInitService.getModel(userId);
 
     if (!model)
       throw new BadRequestException(

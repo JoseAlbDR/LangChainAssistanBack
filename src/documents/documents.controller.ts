@@ -13,11 +13,14 @@ import {
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentOptionsDto } from './dtos/document-options.dto';
+import { Auth, GetUser } from 'src/auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('document')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
+  @Auth()
   @Post()
   @UseInterceptors(FileInterceptor('document'))
   async feedDocument(
@@ -27,9 +30,14 @@ export class DocumentsController {
       }),
     )
     document: Express.Multer.File,
+    @GetUser('id') user: User,
     @Body() documentOptions: DocumentOptionsDto,
   ) {
-    return await this.documentsService.create(document, documentOptions);
+    return await this.documentsService.create(
+      document,
+      documentOptions,
+      user.id,
+    );
   }
 
   @Get()

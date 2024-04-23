@@ -16,7 +16,7 @@ export const GetUser = createParamDecorator((data, ctx: ExecutionContext) => {
   let options: { user?: User; email?: string };
 
   if (!data) options = { ...options, user };
-  if (data === 'email') options = { ...options, email: user.email };
+  if (data) options = { ...options, [data]: user[data] };
 
-  return options;
+  return { ...options };
 });

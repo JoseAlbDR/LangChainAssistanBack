@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { AssistantService } from './assistant.service';
 import { AssistantController } from './assistant.controller';
 import { SharedModule } from 'src/shared/services/shared.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [SharedModule],
+  imports: [SharedModule, AuthModule],
   controllers: [AssistantController],
   providers: [
     AssistantService,

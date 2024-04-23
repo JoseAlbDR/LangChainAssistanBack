@@ -77,6 +77,7 @@ export class DocumentsService {
   async create(
     document: Express.Multer.File,
     documentOptions: DocumentOptionsDto,
+    userId: string,
   ) {
     const { chunkSize, chunkOverlap } = documentOptions;
 
@@ -102,7 +103,8 @@ export class DocumentsService {
         },
       });
 
-      const vectorStore = await this.vectorStoreService.createVectorStore();
+      const vectorStore =
+        await this.vectorStoreService.createVectorStore(userId);
 
       await this.vectorStoreService.addModels(
         vectorStore,
