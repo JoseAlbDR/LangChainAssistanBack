@@ -8,10 +8,15 @@ import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { LoginUserDto, CreateUserDto } from './dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
   async register(createUserDto: CreateUserDto) {
     const { username, email } = createUserDto;
 
@@ -30,19 +35,30 @@ export class AuthService {
     const { password, ...data } = createUserDto;
 
     const user = await this.prismaService.user.create({
-      data: { ...data, password: bcrypt.hashSync(password, 10) },
+      data: {
+        username: data.username.toLowerCase(),
+        email: data.email.toLowerCase(),
+        password: bcrypt.hashSync(password, 10),
+      },
       select: { password: false, username: true, email: true, id: true },
     });
 
-    return user;
+    return {
+      ...user,
+      token: this.getJwtToken({
+        email: user.email,
+        id: user.id,
+        username: user.username,
+      }),
+    };
   }
 
   async login(loginUserDto: LoginUserDto) {
     const { username, password } = loginUserDto;
 
     const user = await this.prismaService.user.findUnique({
-      where: { username },
-      select: { username: true, password: true },
+      where: { username: username.toLowerCase() },
+      select: { username: true, password: true, email: true, id: true },
     });
 
     if (!user)
@@ -53,6 +69,18 @@ export class AuthService {
     if (!validPassword)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
-    return user;
+    return {
+      ...user,
+      token: this.getJwtToken({
+        email: user.email,
+        id: user.id,
+        username: user.username,
+      }),
+    };
+  }
+
+  private getJwtToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+    return token;
   }
 }
