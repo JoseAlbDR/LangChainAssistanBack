@@ -12,6 +12,8 @@ import { Document } from 'langchain/document';
 import { VectorStoreService } from 'src/shared/services/vector-store/vector-store.service';
 import { MemoryService } from 'src/shared/services/memory/memory.service';
 import { DocumentOptionsDto } from './dtos/document-options.dto';
+import { CheckPermissions } from 'src/utils/check-permissions.util';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class DocumentsService {
@@ -122,8 +124,11 @@ export class DocumentsService {
     }
   }
 
-  async findAll() {
+  async findAll(userId: string) {
     const documents = await this.prismaService.document.findMany({
+      where: {
+        userId,
+      },
       select: {
         name: true,
       },
@@ -132,9 +137,10 @@ export class DocumentsService {
     return documents;
   }
 
-  async findOne(document: string) {
+  async findOne(document: string, userId: string) {
     const foundDocument = await this.prismaService.document.findUnique({
       where: {
+        userId,
         name: document,
       },
     });
@@ -149,7 +155,7 @@ export class DocumentsService {
   //   return `This action updates a #${id} document`;
   // }
 
-  async remove(name: string) {
+  async remove(name: string, user: User) {
     try {
       const document = await this.prismaService.document.findUnique({
         where: {
@@ -159,6 +165,8 @@ export class DocumentsService {
 
       if (!document)
         throw new NotFoundException(`Documento ${name} no encontrado`);
+
+      CheckPermissions.check(user, document.userId);
 
       await this.memoryService.removeHistory(name);
       await this.prismaService.$transaction([
