@@ -31,8 +31,8 @@ model Document {
   id         String      @id @default(uuid())
   name       String      @unique
   embeddings Embedding[]
-  User       User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String?
+  User       User?       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdBy  String?
 }
 
 model Embedding {

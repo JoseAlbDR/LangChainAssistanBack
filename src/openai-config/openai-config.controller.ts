@@ -7,10 +7,10 @@ import { User } from '@prisma/client';
 // import { UpdateOpenaiConfigDto } from './dto/update-openai-config.dto';
 
 @Controller('openai-config')
+@Auth()
 export class OpenaiConfigController {
   constructor(private readonly openaiConfigService: OpenaiConfigService) {}
 
-  @Auth()
   @Post('')
   async createConfig(
     @Body() chatConfig: CreateOpenaiConfigDto,
@@ -21,7 +21,6 @@ export class OpenaiConfigController {
     return 'Config saved successfully';
   }
 
-  @Auth()
   @Get('')
   async getConfig(@GetUser('id') user: User) {
     const config = await this.openaiConfigService.getConfig(user.id);
@@ -33,7 +32,6 @@ export class OpenaiConfigController {
     return { config, isKeyPresent };
   }
 
-  @Auth()
   @Put('')
   async updateConfig(
     @Body() config: UpdateOpenaiConfigDto,

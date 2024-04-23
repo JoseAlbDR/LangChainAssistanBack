@@ -127,7 +127,7 @@ export class DocumentsService {
   async findAll(userId: string) {
     const documents = await this.prismaService.document.findMany({
       where: {
-        userId,
+        createdBy: userId,
       },
       select: {
         name: true,
@@ -147,7 +147,7 @@ export class DocumentsService {
     if (!foundDocument)
       throw new NotFoundException(`Documento ${document} no encontrado`);
 
-    CheckPermissions.check(user, foundDocument.userId);
+    CheckPermissions.check(user, foundDocument.createdBy);
 
     return foundDocument;
   }
@@ -167,7 +167,7 @@ export class DocumentsService {
       if (!document)
         throw new NotFoundException(`Documento ${name} no encontrado`);
 
-      CheckPermissions.check(user, document.userId);
+      CheckPermissions.check(user, document.createdBy);
 
       await this.memoryService.removeHistory(name);
       await this.prismaService.$transaction([

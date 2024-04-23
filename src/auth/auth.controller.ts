@@ -2,12 +2,15 @@ import {
   Controller,
   Post,
   Body,
+  Get,
   // Get,
   // UseGuards,
   // SetMetadata,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto } from './dto';
+import { Auth, GetUser } from './decorators';
+import { User } from '@prisma/client';
 // import { AuthGuard } from '@nestjs/passport';
 // import { User } from '@prisma/client';
 // import { Auth, GetRawHeaders, GetUser, RoleProtected } from './decorators';
@@ -26,6 +29,12 @@ export class AuthController {
   @Post('login')
   login(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+
+  @Auth()
+  @Get()
+  checkAuthStatus(@GetUser('id') user: User) {
+    return this.authService.checkAuthStatus(user);
   }
 
   // @Get('private')

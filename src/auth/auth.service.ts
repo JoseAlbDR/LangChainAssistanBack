@@ -10,6 +10,7 @@ import { PrismaService } from 'src/shared/services/prisma/prisma.service';
 import { LoginUserDto, CreateUserDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -71,6 +72,17 @@ export class AuthService {
 
     delete user.password;
 
+    return {
+      ...user,
+      token: this.getJwtToken({
+        email: user.email,
+        id: user.id,
+        username: user.username,
+      }),
+    };
+  }
+
+  async checkAuthStatus(user: User) {
     return {
       ...user,
       token: this.getJwtToken({
