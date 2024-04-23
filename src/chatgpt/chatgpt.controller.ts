@@ -67,8 +67,6 @@ export class ChatgptController {
   ) {
     const { question } = userQuestionDto;
 
-    console.log(user);
-
     const stream = await this.chatgptService.getChatgptAnswer(question, user);
 
     return this.returnStream(res, stream);

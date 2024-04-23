@@ -11,12 +11,16 @@ import { LoginUserDto, CreateUserDto } from './dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
+import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
+import { ModelInitService } from 'src/shared/services/model-init/model-init.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly openAIConfigService: OpenaiConfigService,
+    private readonly modelInitService: ModelInitService,
   ) {}
   async register(createUserDto: CreateUserDto) {
     const { username, email } = createUserDto;
@@ -71,6 +75,9 @@ export class AuthService {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
     delete user.password;
+
+    const config = await this.openAIConfigService.getConfig(user.id);
+    await this.modelInitService.initModel(config, user.id);
 
     return {
       ...user,
