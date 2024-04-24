@@ -16,6 +16,8 @@ export class OpenaiConfigService {
     createOpenaiConfigDto: CreateOpenaiConfigDto,
     userId: string,
   ) {
+    console.log({ userId });
+
     try {
       const config = await this.prismaService.config.create({
         data: {
@@ -32,7 +34,8 @@ export class OpenaiConfigService {
         },
       });
 
-      await this.modelInitService.initModel(config, userId);
+      if (config.openAIApiKey)
+        await this.modelInitService.initModel(config, userId);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(

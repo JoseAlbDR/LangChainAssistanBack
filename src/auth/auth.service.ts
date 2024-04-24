@@ -48,6 +48,8 @@ export class AuthService {
       select: { password: false, username: true, email: true, id: true },
     });
 
+    await this.openAIConfigService.saveConfig({}, user.id);
+
     return {
       ...user,
       token: this.getJwtToken({
@@ -63,7 +65,13 @@ export class AuthService {
 
     const user = await this.prismaService.user.findUnique({
       where: { username: username.toLowerCase() },
-      select: { username: true, password: true, email: true, id: true },
+      select: {
+        username: true,
+        password: true,
+        email: true,
+        id: true,
+        isActive: true,
+      },
     });
 
     if (!user)
@@ -74,10 +82,15 @@ export class AuthService {
     if (!validPassword)
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
 
+    if (!user.isActive) throw new UnauthorizedException('Usuario inactivo');
+
     delete user.password;
+    delete user.isActive;
 
     const config = await this.openAIConfigService.getConfig(user.id);
-    await this.modelInitService.initModel(config, user.id);
+
+    if (config.openAIApiKey)
+      await this.modelInitService.initModel(config, user.id);
 
     return {
       ...user,

@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateOpenaiConfigDto {
   @IsString()
@@ -10,10 +10,12 @@ export class CreateOpenaiConfigDto {
   modelName?: string;
 
   @IsString()
-  openAIApiKey: string;
+  openAIApiKey?: string;
 
-  @IsNumber()
+  @IsNumber({}, { message: 'La temperatur debe de ser un numero entre 0 y 1' })
   @IsOptional()
+  @Min(0, { message: 'La temperatura mínima es 0' })
+  @Max(1, { message: 'La temperatura máxima es 1' })
   temperature?: number;
 
   @IsNumber()

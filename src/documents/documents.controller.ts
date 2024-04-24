@@ -55,8 +55,8 @@ export class DocumentsController {
   //   return this.documentsService.update(+id, updateDocumentDto);
   // }
 
-  @Delete(':name')
-  remove(@Param('name') name: string, @GetUser() user: User) {
-    return this.documentsService.remove(name, user);
+  @Delete(':id')
+  remove(@Param('id') id: string, @GetUser() user: User) {
+    return this.documentsService.remove(id, user);
   }
 }

@@ -132,6 +132,7 @@ export class DocumentsService {
       },
       select: {
         name: true,
+        id: true,
       },
     });
 
@@ -157,20 +158,19 @@ export class DocumentsService {
   //   return `This action updates a #${id} document`;
   // }
 
-  async remove(name: string, user: User) {
+  async remove(id: string, user: User) {
     try {
       const document = await this.prismaService.document.findUnique({
         where: {
-          name,
+          id,
         },
       });
 
-      if (!document)
-        throw new NotFoundException(`Documento ${name} no encontrado`);
+      if (!document) throw new NotFoundException(`Documento no encontrado`);
 
       CheckPermissions.check(user, document.createdBy);
 
-      await this.memoryService.removeHistory(name, user);
+      await this.memoryService.removeHistory(document.name, user);
       await this.prismaService.$transaction([
         this.prismaService.embedding.deleteMany({
           where: {
@@ -179,7 +179,7 @@ export class DocumentsService {
         }),
         this.prismaService.document.delete({
           where: {
-            name,
+            id,
           },
         }),
       ]);

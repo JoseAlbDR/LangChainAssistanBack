@@ -12,7 +12,7 @@ model User {
   username  String     @unique
   email     String     @unique
   password  String
-  isActive  Boolean    @default(false)
+  isActive  Boolean    @default(true)
   roles     String[]   @default(["user"])
   config    Config?
   documents Document[]
