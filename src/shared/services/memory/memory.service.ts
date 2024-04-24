@@ -37,9 +37,12 @@ export class MemoryService {
       },
     });
 
-    if (!exist)
+    if (!document.includes('chatgptbot') && !exist) {
       throw new NotFoundException(`Documento ${document} no encontrado`);
-    CheckPermissions.check(user, exist.createdBy);
+    }
+
+    if (!document.includes('chatgptbot'))
+      CheckPermissions.check(user, exist.createdBy);
 
     const collection = await this.connectToCollection();
 
