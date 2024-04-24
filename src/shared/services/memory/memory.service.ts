@@ -77,7 +77,7 @@ export class MemoryService {
       }),
     });
 
-    return { memory, id: foundDoc.id };
+    return { memory };
   }
 
   async removeHistory(document: string, user: User) {

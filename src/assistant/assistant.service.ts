@@ -181,14 +181,11 @@ export class AssistantService {
         'Error creando el modelo, ¿Es tu API Key válida?',
       );
 
-    const { memory, id } = await this.memoryService.createMemory(
-      document,
-      user,
-    );
+    const { memory } = await this.memoryService.createMemory(document, user);
 
     const prompt = this.createPrompt(document);
 
-    const retrieverTool = await this.createRetrieverTool(id, document);
+    const retrieverTool = await this.createRetrieverTool(user.id, document);
 
     const tools = [retrieverTool];
 

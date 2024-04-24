@@ -102,6 +102,7 @@ export class DocumentsService {
       this.document = await this.prismaService.document.create({
         data: {
           name: document.originalname,
+          createdBy: userId,
         },
       });
 
