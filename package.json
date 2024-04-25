@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "node -r ts-node/register src/utils/generate-keys.ts && nest build",
+    "build": "node -r ts-node/register src/utils/generate-keys.ts && nest build && node -r ts-node/register src/utils/delete-keys.ts ",
     "generate-keys": "node -r ts-node/register src/utils/generate-keys.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

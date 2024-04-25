@@ -1,13 +1,12 @@
 import * as fs from 'fs';
-import * as crypto from 'node:crypto';
+import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const secretKey =
-  process.env.SECRET_KEY || crypto.randomBytes(32).toString('hex');
+const secretKey = crypto.randomBytes(32).toString('hex');
 
-const iv = process.env.IV || crypto.randomBytes(16).toString('hex');
+const iv = crypto.randomBytes(16).toString('hex');
 
 const envContent = `SECRET_KEY=${secretKey}\nIV=${iv}\n`;
 
