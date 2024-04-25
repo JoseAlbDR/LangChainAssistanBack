@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Document } from 'langchain/document';
 import { OpenaiConfigService } from 'src/openai-config/openai-config.service';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { EncryptService } from '../encrypt/encrypt.service';
 
 // Define the return type of the method
 type VectorStoreType = PrismaVectorStore<
@@ -30,6 +31,7 @@ export class VectorStoreService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly openAIConfigService: OpenaiConfigService,
+    private readonly encryptService: EncryptService,
   ) {}
 
   async createVectorStore(
@@ -50,7 +52,7 @@ export class VectorStoreService {
       this.prismaService,
     ).create(
       new OpenAIEmbeddings({
-        openAIApiKey: config.openAIApiKey,
+        openAIApiKey: this.encryptService.decrypt(config.openAIApiKey),
         modelName: 'text-embedding-3-small',
       }),
       {
