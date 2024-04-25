@@ -25,4 +25,9 @@ export const envs = {
 
   //* JWT
   JWT_SECRET: get('JWT_SECRET').asString(),
+
+  //* ENCRYPT
+  ALGORITHM: get('ALGORITHM').asString(),
+  SECRET_KEY: get('SECRET_KEY').asString(),
+  IV: get('IV').asString(),
 };
