@@ -29,10 +29,12 @@ model Config {
 
 model Document {
   id         String      @id @default(uuid())
-  name       String      @unique
+  name       String
   embeddings Embedding[]
   User       User?       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   createdBy  String?
+
+  @@unique([createdBy, name])
 }
 
 model Embedding {

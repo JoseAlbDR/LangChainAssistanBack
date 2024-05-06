@@ -25,13 +25,15 @@ export class AuthService {
   async register(createUserDto: CreateUserDto) {
     const { username, email } = createUserDto;
 
-    const [emailExist, usernameExist] = await this.prismaService.$transaction([
-      this.prismaService.user.findUnique({ where: { email } }),
-      this.prismaService.user.findUnique({ where: { username } }),
-    ]);
-
+    const emailExist = await this.prismaService.user.findUnique({
+      where: { email },
+    });
     if (emailExist)
       throw new BadRequestException('El email está siendo utilizado');
+
+    const usernameExist = await this.prismaService.user.findUnique({
+      where: { username },
+    });
     if (usernameExist)
       throw new BadRequestException(
         'El nombre de usuario está siendo utilizado',

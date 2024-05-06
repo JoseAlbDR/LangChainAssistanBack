@@ -65,10 +65,13 @@ export class DocumentsService {
     return output;
   }
 
-  private checkIfDocumentExist = async (document: string) => {
+  private checkIfDocumentExist = async (document: string, userId: string) => {
     const exist = await this.prismaService.document.findUnique({
       where: {
-        name: document,
+        createdBy_name: {
+          createdBy: userId,
+          name: document,
+        },
       },
     });
 
@@ -83,7 +86,7 @@ export class DocumentsService {
   ) {
     const { chunkSize, chunkOverlap } = documentOptions;
 
-    await this.checkIfDocumentExist(document.originalname);
+    await this.checkIfDocumentExist(document.originalname, userId);
     try {
       const splitter = new RecursiveCharacterTextSplitter({
         separators: ['\n'],
@@ -142,7 +145,10 @@ export class DocumentsService {
   async findOne(document: string, user: User) {
     const foundDocument = await this.prismaService.document.findUnique({
       where: {
-        name: document,
+        createdBy_name: {
+          createdBy: user.id,
+          name: document,
+        },
       },
     });
 
